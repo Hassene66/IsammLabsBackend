@@ -5,8 +5,7 @@ const {
   findUser,
   deleteUser,
   updateUser,
-} = require("../../controllers/usersController");
-const { protect, authorize } = require("../../middleware/authMiddleware");
+} = require("../controllers/userController");
 // Get All users
 router.get("/users", findAllUser);
 // Add user

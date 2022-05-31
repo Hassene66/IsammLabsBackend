@@ -10,8 +10,10 @@ const {
   updateEmail,
   resetEmail,
   getMe,
+  me,
 } = require("../controllers/authController");
 const { protect, authorize } = require("../middleware/authMiddleware");
+router.get("/", me);
 router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);

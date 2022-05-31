@@ -65,6 +65,9 @@ exports.login = async (req, res, next) => {
   sendTokenResponse(user, 200, res);
 };
 
+exports.me = async (req, res) => {
+  return res.status(200).json({ success: true });
+};
 exports.logout = async (req, res) => {
   return res.status(200).json({ success: true });
 };

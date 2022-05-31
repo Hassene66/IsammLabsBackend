@@ -1,6 +1,7 @@
 require("express-async-errors");
 require("dotenv").config();
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 process.on("uncaughtException", (err) => {
   console.log(err.name, err.message);
   process.exit(1);
@@ -14,7 +15,7 @@ ConnectDB();
 
 app.use(express.json());
 app.use(cors());
-app.use("/api", authRoutes);
+app.use("/api", authRoutes, userRoutes);
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () =>
   console.log(`server listening at port ${PORT} `)
