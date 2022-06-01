@@ -19,6 +19,7 @@ ConnectDB();
 
 app.use(express.json());
 app.use(cors());
+app.get("/", (req, res) => res.send("ISAMM Backend"));
 app.use(
   "/api",
   authRoutes,
