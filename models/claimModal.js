@@ -6,6 +6,9 @@ const claimSchema = new mongoose.Schema({
     type: String,
     required: [true, "veuillez entrer le tire de reclamation"],
   },
+  description: {
+    type: String,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -22,33 +25,19 @@ const claimSchema = new mongoose.Schema({
     type: String,
     enum: ["software", "hardware"],
   },
-  description: {
-    type: string,
-  },
   toAddSoftware: {
     type: String,
   },
   toUpdateSoftware: {
     type: String,
   },
-  email: {
-    type: String,
-    trim: true,
-    lowercase: true,
-    unique: [true, "l'email doit être unique"],
-    required: "l'adresse email est obligatoire",
-    validate: [isEmail, "veuillez saisir une adresse e-mail valide"],
+  bloc: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Bloc",
   },
-  role: {
-    type: String,
-    enum: ["enseignant", "technicien"],
-    default: "enseignant",
-  },
-  password: {
-    type: String,
-    required: [true, "veuillez entrer le mot de passe"],
-    minlength: [6, "le mot de passe doit comporter au moins 6 caractères"],
-    select: false,
+  computer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Computer",
   },
 });
 
