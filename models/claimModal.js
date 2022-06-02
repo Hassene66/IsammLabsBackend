@@ -40,6 +40,11 @@ const claimSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Computer",
     },
+    status: {
+      type: String,
+      enum: ["unprocessed", "resolved", "not resolved"],
+      default: "unprocessed",
+    },
   },
   { timestamps: true }
 );
