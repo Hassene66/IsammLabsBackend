@@ -30,6 +30,7 @@ exports.createClaim = (req, res) => {
 exports.findAllClaims = (req, res) => {
   const data = req.query;
   Claim.find(data)
+    .sort("-createdAt")
     .populate({
       path: "computer",
       model: "Computer",
