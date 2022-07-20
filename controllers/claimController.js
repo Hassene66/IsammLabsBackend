@@ -102,7 +102,7 @@ exports.updateClaim = (req, res) => {
           message: "Claim not found with id " + req.params.claimId,
         });
       }
-      sendTokenResponse(claim, 200, res);
+      return res.send(claim);
     })
     .catch((err) => {
       if (err.kind === "ObjectId") {
