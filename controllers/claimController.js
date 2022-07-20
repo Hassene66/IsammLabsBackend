@@ -30,6 +30,7 @@ exports.createClaim = (req, res) => {
 exports.findAllClaims = (req, res) => {
   const data = req.query;
   Claim.find(data)
+    .sort("-createdAt")
     .populate({
       path: "computer",
       model: "Computer",
@@ -101,7 +102,7 @@ exports.updateClaim = (req, res) => {
           message: "Claim not found with id " + req.params.claimId,
         });
       }
-      sendTokenResponse(claim, 200, res);
+      return res.send(claim);
     })
     .catch((err) => {
       if (err.kind === "ObjectId") {
