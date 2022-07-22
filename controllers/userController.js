@@ -109,6 +109,40 @@ exports.updateUser = (req, res) => {
     });
 };
 
+exports.updateFcmKey = (req, res) => {
+  // Validate Request
+  if (Object.keys(req.body).length === 0) {
+    return res.status(400).send({
+      message: "User content can not be empty",
+    });
+  }
+
+  // Find and update user with the request body
+  User.findByIdAndUpdate(
+    req.params.userId,
+    { $addToSet: { fcm_key: req.body.data } },
+    { new: true }
+  )
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({
+          message: "User not found with id " + req.params.userId,
+        });
+      }
+      sendTokenResponse(user, 200, res);
+    })
+    .catch((err) => {
+      if (err.kind === "ObjectId") {
+        return res.status(404).send({
+          message: "User not found with id " + req.params.userId,
+        });
+      }
+      return res.status(500).send({
+        message: "Something wrong updating note with id " + req.params.userId,
+      });
+    });
+};
+
 // Delete a note with the specified Id in the request
 exports.deleteUser = (req, res) => {
   User.findByIdAndRemove(req.params.userId)

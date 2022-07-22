@@ -5,6 +5,7 @@ const {
   findUser,
   deleteUser,
   updateUser,
+  updateFcmKey,
 } = require("../controllers/userController");
 // Get All users
 router.get("/users", findAllUser);
@@ -14,6 +15,8 @@ router.post("/users", createUser);
 router.get("/users/:userId", findUser);
 // update user
 router.put("/users/:userId", updateUser);
+// update fcm key
+router.put("/users/fcm/:userId", updateFcmKey);
 // delete user
 router.delete("/users/:userId", deleteUser);
 
