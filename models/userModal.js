@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
     minlength: [6, "le mot de passe doit comporter au moins 6 caractères"],
     select: false,
   },
+  fcm_key: {
+    type: Array,
+    select: false,
+  },
 });
 
 userSchema.methods.getSignedJwtToken = function () {
