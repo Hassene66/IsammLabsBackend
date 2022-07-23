@@ -111,9 +111,9 @@ exports.updateUser = (req, res) => {
 
 exports.updateFcmKey = (req, res) => {
   // Validate Request
-  if (req.headers?.fcm_key) {
+  if (!req.headers?.fcm_key) {
     return res.status(400).send({
-      message: "FCM key not",
+      message: "FCM key is not provided",
     });
   }
 
@@ -138,7 +138,8 @@ exports.updateFcmKey = (req, res) => {
         });
       }
       return res.status(500).send({
-        message: "Something wrong updating note with id " + req.params.userId,
+        message:
+          "Something wrong updating fcm key with id " + req.params.userId,
       });
     });
 };
