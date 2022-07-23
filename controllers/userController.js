@@ -111,16 +111,16 @@ exports.updateUser = (req, res) => {
 
 exports.updateFcmKey = (req, res) => {
   // Validate Request
-  if (Object.keys(req.body).length === 0) {
+  if (req.headers?.fcm_key) {
     return res.status(400).send({
-      message: "User content can not be empty",
+      message: "FCM key not",
     });
   }
 
   // Find and update user with the request body
   User.findByIdAndUpdate(
     req.params.userId,
-    { $addToSet: { fcm_key: req.body.data } },
+    { $addToSet: { fcm_key: req.headers?.fcm_key } },
     { new: true }
   )
     .then((user) => {
