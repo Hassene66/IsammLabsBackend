@@ -12,7 +12,7 @@ const {
   getMe,
   me,
 } = require("../controllers/authController");
-const { protect, authorize } = require("../middleware/authMiddleware");
+const { protect, authorize } = require("../middlewares/authMiddleware");
 router.get("/", me);
 router.post("/register", register);
 router.post("/login", login);

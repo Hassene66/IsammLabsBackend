@@ -1,7 +1,7 @@
 const Bloc = require("../models/blocModal");
 
 //Create new Bloc
-exports.createBloc = (req, res) => {
+exports.createBloc = async (req, res) => {
   // Request validation
   const blocData = req.body;
   if (Object.keys(req.body).length === 0) {
@@ -27,7 +27,7 @@ exports.createBloc = (req, res) => {
 };
 
 // Retrieve all blocs from the database.
-exports.findAllBlocs = (req, res) => {
+exports.findAllBlocs = async (req, res) => {
   const data = req.query;
   Bloc.find(data)
     .populate("labs")
@@ -51,7 +51,7 @@ exports.findAllBlocs = (req, res) => {
 };
 
 // Find a single bloc with a blocId
-exports.findBloc = (req, res) => {
+exports.findBloc = async (req, res) => {
   Bloc.findById(req.params.blocId)
     .then((bloc) => {
       if (!bloc) {
@@ -73,7 +73,7 @@ exports.findBloc = (req, res) => {
     });
 };
 // Update a bloc
-exports.updateBloc = (req, res) => {
+exports.updateBloc = async (req, res) => {
   // Validate Request
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
@@ -104,7 +104,7 @@ exports.updateBloc = (req, res) => {
 };
 
 // Delete a note with the specified Id in the request
-exports.deleteBloc = (req, res) => {
+exports.deleteBloc = async (req, res) => {
   Bloc.findByIdAndRemove(req.params.blocId)
     .then((bloc) => {
       if (!bloc) {
