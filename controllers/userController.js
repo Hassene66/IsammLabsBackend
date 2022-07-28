@@ -17,7 +17,7 @@ const sendTokenResponse = (user, statusCode, res) => {
 };
 
 //Create new User
-exports.createUser = (req, res) => {
+exports.createUser = async (req, res) => {
   // Request validation
   const userData = req.body;
   if (Object.keys(req.body).length === 0) {
@@ -43,7 +43,7 @@ exports.createUser = (req, res) => {
 };
 
 // Retrieve all users from the database.
-exports.findAllUser = (req, res) => {
+exports.findAllUser = async (req, res) => {
   const data = req.query;
   User.find(data)
     .then((users) => {
@@ -57,7 +57,7 @@ exports.findAllUser = (req, res) => {
 };
 
 // Find a single user with a userId
-exports.findUser = (req, res) => {
+exports.findUser = async (req, res) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
@@ -79,7 +79,7 @@ exports.findUser = (req, res) => {
     });
 };
 // Update a user
-exports.updateUser = (req, res) => {
+exports.updateUser = async (req, res) => {
   // Validate Request
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
@@ -109,7 +109,7 @@ exports.updateUser = (req, res) => {
     });
 };
 
-exports.updateFcmKey = (req, res) => {
+exports.updateFcmKey = async (req, res) => {
   // Validate Request
   if (!req.headers?.fcm_key) {
     return res.status(400).send({
@@ -145,7 +145,7 @@ exports.updateFcmKey = (req, res) => {
 };
 
 // Delete a note with the specified Id in the request
-exports.deleteUser = (req, res) => {
+exports.deleteUser = async (req, res) => {
   User.findByIdAndRemove(req.params.userId)
     .then((user) => {
       if (!user) {
