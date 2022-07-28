@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     type: Array,
     select: false,
   },
+  isAvailable: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 userSchema.methods.getSignedJwtToken = function () {
