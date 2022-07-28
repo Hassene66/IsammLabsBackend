@@ -5,7 +5,7 @@ const computerSchema = new mongoose.Schema({
     type: String,
     required: [true, "veuillez entrer le nom de l'oradinateur"],
   },
-  installedSoftwares: [
+  softwareInstalled: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Software",

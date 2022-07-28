@@ -36,7 +36,13 @@ exports.findAllBlocs = async (req, res) => {
       populate: [
         {
           path: "computer",
-          model: "Computer",
+          populate: [
+            {
+              path: "softwareInstalled",
+              modal: "Software",
+            },
+          ],
+          modal: "Computer",
         },
       ],
     })

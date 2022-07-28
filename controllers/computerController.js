@@ -30,6 +30,7 @@ exports.createComputer = async (req, res) => {
 exports.findAllComputers = async (req, res) => {
   const data = req.query;
   Computer.find(data)
+    .populate("softwareInstalled")
     .then((computers) => {
       res.send(computers);
     })
