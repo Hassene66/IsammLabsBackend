@@ -6,6 +6,7 @@ const blocRoutes = require("./routes/blocRoutes");
 const laboratoryRoutes = require("./routes/laboratoryRoutes");
 const computerRoutes = require("./routes/computerRoutes");
 const claimRoutes = require("./routes/claimRoutes");
+const softwareRoutes = require("./routes/softwareRoute");
 process.on("uncaughtException", (err) => {
   console.log(err.name, err.message);
   process.exit(1);
@@ -26,6 +27,7 @@ app.use(
   userRoutes,
   blocRoutes,
   laboratoryRoutes,
+  softwareRoutes,
   computerRoutes,
   claimRoutes
 );
