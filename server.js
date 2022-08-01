@@ -7,6 +7,7 @@ const laboratoryRoutes = require("./routes/laboratoryRoutes");
 const computerRoutes = require("./routes/computerRoutes");
 const claimRoutes = require("./routes/claimRoutes");
 const softwareRoutes = require("./routes/softwareRoute");
+const notificationRoutes = require("./routes/notificationRoutes");
 const serviceAccount = require("./issam-labs-cc4b7-firebase-adminsdk-940fo-8ae33d6802.json");
 process.on("uncaughtException", (err) => {
   console.log(err.name, err.message);
@@ -34,7 +35,8 @@ app.use(
   laboratoryRoutes,
   softwareRoutes,
   computerRoutes,
-  claimRoutes
+  claimRoutes,
+  notificationRoutes
 );
 app.use(errorHandler);
 app.all("/api/*", (req, res) => {
