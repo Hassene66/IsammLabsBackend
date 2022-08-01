@@ -14,16 +14,16 @@ exports.createClaim = async (req, res) => {
   const claim = new Claim(claimData);
   User.findById(claimData.assignedTo)
     .select("+fcm_key")
-    .then((user) =>
+    .then((user) => {
       admin.messaging().sendMulticast({
         data: { routeName: "TO_REPAIR" },
         tokens: user.fcm_key,
         notification: {
           title: "Nouvelle réclamation!",
-          body: "vous avez une nouvelle réclamation à réparer",
+          body: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
         },
-      })
-    )
+      });
+    })
     .then(() =>
       claim.save().then((data) => {
         res.send(data);
