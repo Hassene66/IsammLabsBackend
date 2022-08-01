@@ -31,6 +31,7 @@ exports.createNotification = (req, res) => {
 exports.findAllNotifications = (req, res) => {
   const data = req.query;
   Notification.find(data)
+    .populate(["assignedTo", "createdBy"])
     .then((notifications) => {
       res.send(notifications);
     })
