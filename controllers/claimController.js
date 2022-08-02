@@ -1,6 +1,9 @@
 const admin = require("firebase-admin");
 const Claim = require("../models/claimModal");
+const Notification = require("../models/notificationModal");
 const User = require("../models/userModal");
+const moment = require("moment-timezone");
+
 //Create new Claim
 exports.createClaim = async (req, res) => {
   // Request validation
@@ -23,14 +26,25 @@ exports.createClaim = async (req, res) => {
           body: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
         },
       });
+      return user;
+    })
+    .then((user) => {
+      const notificationData = {
+        title: "Nouvelle réclamation!",
+        description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
+        createdBy: claimData.createdBy,
+        assignedTo: claimData.assignedTo,
+        targetScreen: "To repair",
+      };
+      return Notification.create(notificationData);
     })
     .then(() =>
       claim.save().then((data) => {
-        res.send(data);
+        return res.send(data);
       })
     )
     .catch((err) => {
-      res.status(500).send({
+      return res.status(500).send({
         message: err.message || "Something wrong while creating the claim.",
       });
     });
