@@ -32,7 +32,7 @@ exports.findAllNotifications = (req, res) => {
   const data = req.query;
   Notification.find(data)
     .populate(["assignedTo", "createdBy"])
-    .sort("-createdAt")
+    .sort("-datetime")
     .then((notifications) => {
       res.send(notifications);
     })
