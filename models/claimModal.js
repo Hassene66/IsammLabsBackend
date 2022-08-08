@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const isEmail = require("validator/lib/isEmail");
 
 const claimSchema = new mongoose.Schema(
   {
@@ -42,7 +41,7 @@ const claimSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["unprocessed", "resolved", "not resolved"],
+      enum: ["unprocessed", "in_progress", "resolved", "not_resolved"],
       default: "unprocessed",
     },
   },
