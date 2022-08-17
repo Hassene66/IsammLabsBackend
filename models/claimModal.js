@@ -26,7 +26,8 @@ const claimSchema = new mongoose.Schema(
       enum: ["software", "hardware"],
     },
     toAddSoftware: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Software",
     },
     toUpdateSoftware: {
       type: String,
