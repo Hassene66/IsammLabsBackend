@@ -30,7 +30,7 @@ exports.createSoftware = (req, res) => {
 exports.findAllSoftware = (req, res) => {
   const data = req.query;
   Software.find(data)
-    .sort("-name")
+    .sort("+name")
     .then((softwares) => {
       res.send(softwares);
     })
