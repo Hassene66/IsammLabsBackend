@@ -4,7 +4,7 @@ const claimSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "veuillez entrer le tire de reclamation"],
+      required: [true, "veuillez entrer le titre de réclamation"],
     },
     description: {
       type: String,
@@ -28,6 +28,10 @@ const claimSchema = new mongoose.Schema(
     toAddSoftware: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Software",
+    },
+    installedIn: {
+      type: String,
+      enum: ["windows", "linux", "macos"],
     },
     toUpdateSoftware: {
       type: String,
