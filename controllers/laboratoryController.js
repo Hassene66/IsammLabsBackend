@@ -1,7 +1,7 @@
 const Laboratory = require("../models/laboratoryModal");
 
 //Create new Laboratory
-exports.createLaboratory = (req, res) => {
+exports.createLaboratory = async (req, res) => {
   // Request validation
   const laboratoryData = req.body;
   if (Object.keys(req.body).length === 0) {
@@ -28,7 +28,7 @@ exports.createLaboratory = (req, res) => {
 };
 
 // Retrieve all laboratorys from the database.
-exports.findAllLaboratorys = (req, res) => {
+exports.findAllLaboratorys = async (req, res) => {
   const data = req.query;
   Laboratory.find(data)
     .then((laboratorys) => {
@@ -42,7 +42,7 @@ exports.findAllLaboratorys = (req, res) => {
 };
 
 // Find a single laboratory with a laboratoryId
-exports.findLaboratory = (req, res) => {
+exports.findLaboratory = async (req, res) => {
   Laboratory.findById(req.params.laboratoryId)
     .then((laboratory) => {
       if (!laboratory) {
@@ -66,7 +66,7 @@ exports.findLaboratory = (req, res) => {
     });
 };
 // Update a laboratory
-exports.updateLaboratory = (req, res) => {
+exports.updateLaboratory = async (req, res) => {
   // Validate Request
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
@@ -98,7 +98,7 @@ exports.updateLaboratory = (req, res) => {
 };
 
 // Delete a note with the specified Id in the request
-exports.deleteLaboratory = (req, res) => {
+exports.deleteLaboratory = async (req, res) => {
   Laboratory.findByIdAndRemove(req.params.laboratoryId)
     .then((laboratory) => {
       if (!laboratory) {

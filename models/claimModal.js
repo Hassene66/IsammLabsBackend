@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const isEmail = require("validator/lib/isEmail");
 
 const claimSchema = new mongoose.Schema(
   {
@@ -27,7 +26,8 @@ const claimSchema = new mongoose.Schema(
       enum: ["software", "hardware"],
     },
     toAddSoftware: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Software",
     },
     toUpdateSoftware: {
       type: String,
@@ -42,7 +42,7 @@ const claimSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["unprocessed", "resolved", "not resolved"],
+      enum: ["unprocessed", "in_progress", "resolved", "not_resolved"],
       default: "unprocessed",
     },
   },

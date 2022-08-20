@@ -7,6 +7,8 @@ const laboratoryRoutes = require("./routes/laboratoryRoutes");
 const computerRoutes = require("./routes/computerRoutes");
 const claimRoutes = require("./routes/claimRoutes");
 const softwareRoutes = require("./routes/softwareRoute");
+const notificationRoutes = require("./routes/notificationRoutes");
+const serviceAccount = require("./issam-labs-cc4b7-firebase-adminsdk-940fo-8ae33d6802.json");
 process.on("uncaughtException", (err) => {
   console.log(err.name, err.message);
   process.exit(1);
@@ -14,10 +16,14 @@ process.on("uncaughtException", (err) => {
 const express = require("express");
 const cors = require("cors");
 const ConnectDB = require("./config/db");
+const admin = require("firebase-admin");
+const errorHandler = require("./middlewares/errorMiddleware");
 const app = express();
-
 ConnectDB();
 
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 app.use(express.json());
 app.use(cors());
 app.get("/", (req, res) => res.send("ISAMM Backend"));
@@ -29,8 +35,15 @@ app.use(
   laboratoryRoutes,
   softwareRoutes,
   computerRoutes,
-  claimRoutes
+  claimRoutes,
+  notificationRoutes
 );
+app.use(errorHandler);
+app.all("/api/*", (req, res) => {
+  res.status(404).json({
+    message: `Impossible de trouver le route ${req.originalUrl} `,
+  });
+});
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () =>
   console.log(`server listening at port ${PORT} `)

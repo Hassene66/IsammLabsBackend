@@ -1,7 +1,7 @@
 const Computer = require("../models/computerModal");
 
 //Create new Computer
-exports.createComputer = (req, res) => {
+exports.createComputer = async (req, res) => {
   // Request validation
   const computerData = req.body;
   if (Object.keys(req.body).length === 0) {
@@ -27,7 +27,7 @@ exports.createComputer = (req, res) => {
 };
 
 // Retrieve all computers from the database.
-exports.findAllComputers = (req, res) => {
+exports.findAllComputers = async (req, res) => {
   const data = req.query;
   Computer.find(data)
     .populate("softwareInstalled")
@@ -42,7 +42,7 @@ exports.findAllComputers = (req, res) => {
 };
 
 // Find a single computer with a computerId
-exports.findComputer = (req, res) => {
+exports.findComputer = async (req, res) => {
   Computer.findById(req.params.computerId)
     .then((computer) => {
       if (!computer) {
@@ -66,7 +66,7 @@ exports.findComputer = (req, res) => {
     });
 };
 // Update a computer
-exports.updateComputer = (req, res) => {
+exports.updateComputer = async (req, res) => {
   // Validate Request
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
@@ -98,7 +98,7 @@ exports.updateComputer = (req, res) => {
 };
 
 // Delete a note with the specified Id in the request
-exports.deleteComputer = (req, res) => {
+exports.deleteComputer = async (req, res) => {
   Computer.findByIdAndRemove(req.params.computerId)
     .then((computer) => {
       if (!computer) {

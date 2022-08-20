@@ -1,7 +1,11 @@
+const admin = require("firebase-admin");
 const Claim = require("../models/claimModal");
+const Notification = require("../models/notificationModal");
+const User = require("../models/userModal");
+const moment = require("moment-timezone");
 
 //Create new Claim
-exports.createClaim = (req, res) => {
+exports.createClaim = async (req, res) => {
   // Request validation
   const claimData = req.body;
   if (Object.keys(req.body).length === 0) {
@@ -9,25 +13,45 @@ exports.createClaim = (req, res) => {
       message: "Claim content can not be empty",
     });
   }
-
   // Create a Claim
   const claim = new Claim(claimData);
-
-  // Save Claim in the database
-  claim
-    .save()
-    .then((data) => {
-      res.send(data);
+  User.findById(claimData.assignedTo)
+    .select("+fcm_key")
+    .then((user) => {
+      admin.messaging().sendMulticast({
+        data: { routeName: "TO_REPAIR" },
+        tokens: user.fcm_key,
+        notification: {
+          title: "Nouvelle réclamation!",
+          body: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
+        },
+      });
+      return user;
     })
+    .then((user) => {
+      const notificationData = {
+        title: "Nouvelle réclamation!",
+        description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
+        createdBy: claimData.createdBy,
+        assignedTo: claimData.assignedTo,
+        targetScreen: "To repair",
+      };
+      return Notification.create(notificationData);
+    })
+    .then(() =>
+      claim.save().then((data) => {
+        return res.send(data);
+      })
+    )
     .catch((err) => {
-      res.status(500).send({
+      return res.status(500).send({
         message: err.message || "Something wrong while creating the claim.",
       });
     });
 };
 
 // Retrieve all claims from the database.
-exports.findAllClaims = (req, res) => {
+exports.findAllClaims = async (req, res) => {
   const data = req.query;
   Claim.find(data)
     .sort("-createdAt")
@@ -63,7 +87,7 @@ exports.findAllClaims = (req, res) => {
 };
 
 // Find a single claim with a claimId
-exports.findClaim = (req, res) => {
+exports.findClaim = async (req, res) => {
   Claim.findById(req.params.claimId)
     .then((claim) => {
       if (!claim) {
@@ -86,7 +110,7 @@ exports.findClaim = (req, res) => {
     });
 };
 // Update a claim
-exports.updateClaim = (req, res) => {
+exports.updateClaim = async (req, res) => {
   // Validate Request
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
@@ -117,7 +141,7 @@ exports.updateClaim = (req, res) => {
 };
 
 // Delete a note with the specified Id in the request
-exports.deleteClaim = (req, res) => {
+exports.deleteClaim = async (req, res) => {
   Claim.findByIdAndRemove(req.params.claimId)
     .then((claim) => {
       if (!claim) {
