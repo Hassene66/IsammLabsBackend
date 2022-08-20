@@ -75,6 +75,10 @@ exports.findAllClaims = async (req, res) => {
       path: "createdBy",
       model: "User",
     })
+    .populate({
+      path: "toAddSoftware",
+      model: "Software",
+    })
     .exec()
     .then((claims) => {
       res.send(claims);
