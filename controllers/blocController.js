@@ -95,7 +95,7 @@ exports.updateBloc = (req, res) => {
           message: "Bloc not found with id " + req.params.blocId,
         });
       }
-      sendTokenResponse(bloc, 200, res);
+      return res.status(200).send({ message: "Bloc updated succesfully!" });
     })
     .catch((err) => {
       if (err.kind === "ObjectId") {
@@ -104,7 +104,7 @@ exports.updateBloc = (req, res) => {
         });
       }
       return res.status(500).send({
-        message: "Something wrong updating note with id " + req.params.blocId,
+        message: "Something wrong updating bloc with id " + req.params.blocId,
       });
     });
 };
