@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const claimSchema = new mongoose.Schema(
   {
+    type: {
+      type: String,
+      enum: ["newSoftware", "updateSoftware", "hardware"],
+      default: "newSoftware",
+    },
     title: {
       type: String,
       required: [true, "veuillez entrer le titre de réclamation"],
