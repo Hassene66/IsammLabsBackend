@@ -1,13 +1,16 @@
 const admin = require("firebase-admin");
 const Claim = require("../models/claimModal");
+const sendEmail = require("../services/sendEmail");
 const Notification = require("../models/notificationModal");
 const User = require("../models/userModal");
-const moment = require("moment-timezone");
+var jsrender = require("jsrender");
 
 //Create new Claim
 exports.createClaim = async (req, res) => {
   // Request validation
   const claimData = req.body;
+  let TechnicianData = {};
+  const template = jsrender.templates("../template/WarningMail.html");
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
       message: "Claim content can not be empty",
@@ -29,6 +32,7 @@ exports.createClaim = async (req, res) => {
       return user;
     })
     .then((user) => {
+      TechnicianData.fullname = user.fullname;
       const notificationData = {
         title: "Nouvelle réclamation!",
         description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
@@ -40,6 +44,15 @@ exports.createClaim = async (req, res) => {
     })
     .then(() =>
       claim.save().then((data) => {
+        const message = template.render({
+          Tech_fullName: TechnicianData.fullname,
+          Prof_fullName: TechnicianData.fullname,
+        });
+        sendEmail({
+          email: "marwen.ayoub@outlook.com",
+          subject: "Expiration délai du réclamation",
+          message,
+        });
         return res.send(data);
       })
     )
