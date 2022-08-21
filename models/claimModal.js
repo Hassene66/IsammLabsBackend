@@ -54,6 +54,11 @@ const claimSchema = new mongoose.Schema(
       enum: ["unprocessed", "in_progress", "resolved", "not_resolved"],
       default: "unprocessed",
     },
+    state: {
+      type: String,
+      enum: ["En marche", "En panne"],
+      default: "En marche",
+    },
   },
   { timestamps: true }
 );
