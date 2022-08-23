@@ -24,7 +24,7 @@ const computerSchema = new mongoose.Schema({
     },
   ],
   characteristics: {
-    pc: string,
+    pc: String,
     ip: String,
     ram: String,
     storage: String,
