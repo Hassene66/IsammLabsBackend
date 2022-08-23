@@ -24,10 +24,12 @@ const computerSchema = new mongoose.Schema({
     },
   ],
   characteristics: {
+    pc: string,
     ip: String,
     ram: String,
-    proccessor: String,
     storage: String,
+    cpu: String,
+    gpu: String,
   },
   isWorking: {
     type: Boolean,
