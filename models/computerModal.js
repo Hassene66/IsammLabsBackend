@@ -5,7 +5,19 @@ const computerSchema = new mongoose.Schema({
     type: String,
     required: [true, "veuillez entrer le nom de l'oradinateur"],
   },
-  softwareInstalled: [
+  macos: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Software",
+    },
+  ],
+  windows: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Software",
+    },
+  ],
+  linux: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Software",
@@ -16,7 +28,6 @@ const computerSchema = new mongoose.Schema({
     ram: String,
     proccessor: String,
     storage: String,
-    os: String,
   },
   isWorking: {
     type: Boolean,
