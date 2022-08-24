@@ -1,18 +1,39 @@
 const admin = require("firebase-admin");
 const Claim = require("../models/claimModal");
+const sendEmail = require("../services/sendEmail");
 const Notification = require("../models/notificationModal");
 const User = require("../models/userModal");
-const moment = require("moment-timezone");
+const jsrender = require("jsrender");
+const Schedular = require("node-schedule");
 
+const dateToCron = (date) => {
+  const minutes = date.getMinutes();
+  const hours = date.getHours();
+  const days = date.getDate();
+  const months = date.getMonth() + 1;
+  console.log(`${minutes} ${hours} ${days} ${months} ${"*"}`);
+  return `${minutes} ${hours} ${days} ${months} ${"*"}`;
+};
+function addMinutes(numOfMinutes, date = new Date()) {
+  date.setMinutes(date.getMinutes() + numOfMinutes);
+
+  return date;
+}
+const template = jsrender.templates("./template/index3.html");
 //Create new Claim
 exports.createClaim = async (req, res) => {
   // Request validation
   const claimData = req.body;
+  let TechnicianData = {};
+  let teacherData = {};
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
       message: "Claim content can not be empty",
     });
   }
+  User.findById(claimData.createdBy).then((teacherUser) => {
+    teacherData.fullname = teacherUser.fullname;
+  });
   // Create a Claim
   const claim = new Claim(claimData);
   User.findById(claimData.assignedTo)
@@ -29,6 +50,7 @@ exports.createClaim = async (req, res) => {
       return user;
     })
     .then((user) => {
+      TechnicianData.fullname = user.fullname;
       const notificationData = {
         title: "Nouvelle réclamation!",
         description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
@@ -38,10 +60,73 @@ exports.createClaim = async (req, res) => {
       };
       return Notification.create(notificationData);
     })
-    .then(() =>
-      claim.save().then((data) => {
-        return res.send(data);
-      })
+    .then(() => {
+      claim
+        .populate({
+          path: "computer",
+          model: "Computer",
+        })
+        .populate({
+          path: "labo",
+          model: "Laboratory",
+        })
+        .populate({
+          path: "bloc",
+          model: "Bloc",
+        })
+        .populate({
+          path: "computer",
+          model: "Computer",
+        })
+        .populate({
+          path: "createdBy",
+          model: "User",
+        })
+        .then((data) => console.log(data));
+    })
+    .then(
+      () => {
+        claim.save().then((data) => {
+          const message = template.render({
+            Tech_fullName: TechnicianData.fullname,
+            Prof_fullName: teacherData.fullname,
+            Claim_data: data,
+          });
+          // add a week to the current date
+          let date = new Date(data.createdAt);
+
+          // convert to cron time
+          const cron = dateToCron(addMinutes(1, date));
+          Schedular.scheduleJob(cron, async function () {
+            try {
+              sendEmail({
+                email: "marwen.ayoub@outlook.com",
+                subject: "Expiration délai du réclamation",
+                message,
+              });
+              console.log("email sent");
+            } catch (err) {
+              return next(
+                new ErrorResponse("Email n'a pas pu être envoyé", 500)
+              );
+            }
+          });
+          return res.send(data);
+        });
+      }
+      // claim.save().then((data) => {
+
+      //   const message = template.render({
+      //     Tech_fullName: TechnicianData.fullname,
+      //     Prof_fullName: teacherData.fullName,
+      //   });
+      //   sendEmail({
+      //     email: "marwen.ayoub@outlook.com",
+      //     subject: "Expiration délai du réclamation",
+      //     message,
+      //   });
+      //   return res.send(data);
+      // })
     )
     .catch((err) => {
       return res.status(500).send({
