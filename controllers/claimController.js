@@ -82,6 +82,7 @@ exports.createClaim = async (req, res) => {
           path: "createdBy",
           model: "User",
         })
+        .exec()
         .then((data) => console.log(data));
     })
     .then(
