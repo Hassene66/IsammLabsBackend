@@ -12,5 +12,8 @@ const softwareSchema = new mongoose.Schema(
     runSettersOnQuery: true,
   }
 );
-
+softwareSchema.pre("save", function (next) {
+  this.name = this.name.toLowerCase();
+  next();
+});
 module.exports = mongoose.model("Software", softwareSchema);
