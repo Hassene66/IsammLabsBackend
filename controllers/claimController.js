@@ -138,6 +138,12 @@ exports.createClaim = async (req, res) => {
 // Retrieve all claims from the database.
 exports.findAllClaims = async (req, res) => {
   const data = req.query;
+  let skip = undefined;
+  let limit = undefined;
+  if (data?.offset && data?.size) {
+    skip = (data?.offset - 1) * data?.size;
+    limit = data?.size;
+  }
   Claim.find(data)
     .sort("-createdAt")
     .populate({
@@ -164,8 +170,8 @@ exports.findAllClaims = async (req, res) => {
       path: "toAddSoftware",
       model: "Software",
     })
-    .limit(data?.limit)
-    .skip(data?.skip)
+    .skip(skip)
+    .limit(limit)
     .exec()
     .then((claims) => {
       res.send(claims);
