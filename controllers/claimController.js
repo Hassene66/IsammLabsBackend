@@ -164,6 +164,8 @@ exports.findAllClaims = async (req, res) => {
       path: "toAddSoftware",
       model: "Software",
     })
+    .limit(data?.limit)
+    .skip(data?.skip)
     .exec()
     .then((claims) => {
       res.send(claims);
