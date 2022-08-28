@@ -5,7 +5,7 @@ const Notification = require("../models/notificationModal");
 const User = require("../models/userModal");
 const jsrender = require("jsrender");
 const Schedular = require("node-schedule");
-const { DateTime } = require("luxon");
+const moment = require("moment");
 
 const dateToCron = (date) => {
   const minutes = date.getMinutes();
@@ -15,11 +15,6 @@ const dateToCron = (date) => {
   console.log(`${minutes} ${hours} ${days} ${months} ${"*"}`);
   return `${minutes} ${hours} ${days} ${months} ${"*"}`;
 };
-function addMinutes(numOfMinutes, date = new Date()) {
-  date.setMinutes(date.getMinutes() + numOfMinutes);
-
-  return date;
-}
 const template = jsrender.templates("./template/index3.html");
 //Create new Claim
 exports.createClaim = async (req, res) => {
@@ -99,11 +94,10 @@ exports.createClaim = async (req, res) => {
                 Claim_data: populData,
                 Prof_email: teacherData?.email,
                 Tech_email: TechnicianData?.email,
+                Claim_Start_date: startingDate,
+                Claim_end_date: endingDate,
+                Date_now: moment().format("DD/MM/YYYY"),
               });
-              const formattedDate = DateTime.fromISO(
-                populData?.createdAt
-              ).setLocale("fr");
-              console.log(formattedDate.toFormat("F"));
 
               // Date_Reclamation: DateTime.fromISO(
               //   data?.createdAt
@@ -111,14 +105,14 @@ exports.createClaim = async (req, res) => {
             });
           // add a week to the current date
           let date = new Date(data?.createdAt);
-          const startingDate = DateTime.fromISO(data?.createdAt);
-          console.log(startingDate);
-          // format the date using luxon
-          const endingDate = startingDate.plus({ days: 7 });
+          const momentDate = moment(data?.createdAt);
+          const startingDate = momentDate.format("DD/MM/YYYY");
           console.log("starting Date", startingDate);
+          // format the date using luxon
+          const endingDate = momentDate.add(7, "d").format("DD/MM/YYYY");
           console.log("ending Date", endingDate);
           // convert to cron time
-          const cron = dateToCron(addMinutes(1, date));
+          const cron = dateToCron(endingDate);
           Schedular.scheduleJob(cron, async function () {
             try {
               sendEmail({
