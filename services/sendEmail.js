@@ -7,6 +7,9 @@ const sendEmail = async (options) => {
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT,
     secure: false,
+    tls: {
+      ciphers: "SSLv3",
+    },
     auth: {
       user: process.env.SMTP_EMAIL,
       pass: process.env.SMTP_PASSWORD,
@@ -14,7 +17,7 @@ const sendEmail = async (options) => {
   });
 
   let message = {
-    from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
+    from: `${process.env.FROM_NAME} <${process.env.EMAIL_FROM}>`,
     to: options.email,
     subject: options.subject,
     html: options.message,

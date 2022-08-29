@@ -16,6 +16,13 @@ const dateToCron = (date) => {
   return `${minutes} ${hours} ${days} ${months} ${"*"}`;
 };
 const template = jsrender.templates("./template/index3.html");
+
+function addMinutes(numOfMinutes, date = new Date()) {
+  date.setMinutes(date.getMinutes() + numOfMinutes);
+
+  return date;
+}
+
 //Create new Claim
 exports.createClaim = async (req, res) => {
   // Request validation
@@ -109,14 +116,15 @@ exports.createClaim = async (req, res) => {
           const startingDate = momentDate.format("DD/MM/YYYY");
           console.log("starting Date", startingDate);
           // format the date using luxon
-          const endingDate = momentDate.add(7, "d").format("DD/MM/YYYY");
+          const momentEndingDate = momentDate.add(7, "d");
+          const endingDate = momentEndingDate.format("DD/MM/YYYY");
           console.log("ending Date", endingDate);
           // convert to cron time
-          const cron = dateToCron(endingDate);
+          const cron = dateToCron(addMinutes(1, date));
           Schedular.scheduleJob(cron, async function () {
             try {
               sendEmail({
-                email: "marwen.ayoub@outlook.com",
+                email: "hassene.ayoub@yahoo.fr",
                 subject: "Expiration délai du réclamation",
                 message,
               });
