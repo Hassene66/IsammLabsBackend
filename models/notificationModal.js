@@ -27,6 +27,9 @@ const notificationSchema = new mongoose.Schema(
       enum: ["viewed", "not viewed"],
       default: "not viewed",
     },
+    data: {
+      type: Object,
+    },
   },
   { timestamps: true }
 );
