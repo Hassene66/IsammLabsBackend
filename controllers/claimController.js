@@ -6,6 +6,7 @@ const User = require("../models/userModal");
 const jsrender = require("jsrender");
 const Schedular = require("node-schedule");
 const moment = require("moment");
+const ErrorResponse = require("../utils/errorResponse");
 
 const dateToCron = (date) => {
   const minutes = date.getMinutes();
@@ -24,7 +25,7 @@ function addMinutes(numOfMinutes, date = new Date()) {
 }
 
 //Create new Claim
-exports.createClaim = async (req, res) => {
+exports.createClaim = async (req, res, next) => {
   // Request validation
   const claimData = req.body;
   let TechnicianData = {};
@@ -45,8 +46,8 @@ exports.createClaim = async (req, res) => {
 
   User.findById(claimData.assignedTo)
     .select("+fcm_key")
-    .then((user) => {
-      admin.messaging().sendMulticast({
+    .then(async (user) => {
+      await admin.messaging().sendMulticast({
         data: { routeName: "TO_REPAIR" },
         tokens: user.fcm_key,
         notification: {
@@ -56,7 +57,7 @@ exports.createClaim = async (req, res) => {
       });
       return user;
     })
-    .then((user) => {
+    .then(async (user) => {
       TechnicianData.fullname = user?.fullname;
       TechnicianData.email = user?.email;
       const notificationData = {
@@ -64,13 +65,14 @@ exports.createClaim = async (req, res) => {
         description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
         createdBy: claimData.createdBy,
         assignedTo: claimData.assignedTo,
-        targetScreen: "To repair",
+        targetScreen: "TO_REPAIR",
       };
-      return Notification.create(notificationData);
+      await Notification.create(notificationData);
+      return user;
     })
     .then(
-      () => {
-        claim.save().then((data) => {
+      (user) => {
+        claim.save().then(async (data) => {
           Claim.findById(data._id)
             .populate({
               path: "computer",
@@ -93,8 +95,8 @@ exports.createClaim = async (req, res) => {
               model: "User",
             })
             .exec((err, populatedData) => {
-              console.log(populatedData);
               populData = populatedData;
+              console.log("populatedData: ", populatedData);
               message = template.render({
                 Tech_fullName: TechnicianData?.fullname,
                 Prof_fullName: teacherData?.fullname,
@@ -114,25 +116,73 @@ exports.createClaim = async (req, res) => {
           let date = new Date(data?.createdAt);
           const momentDate = moment(data?.createdAt);
           const startingDate = momentDate.format("DD/MM/YYYY");
-          console.log("starting Date", startingDate);
           // format the date using luxon
           const momentEndingDate = momentDate.add(7, "d");
           const endingDate = momentEndingDate.format("DD/MM/YYYY");
-          console.log("ending Date", endingDate);
           // convert to cron time
-          const cron = dateToCron(addMinutes(1, date));
-          Schedular.scheduleJob(cron, async function () {
+          const mailcron = dateToCron(addMinutes(1, date));
+          const alertcron = dateToCron(addMinutes(1, date));
+          Schedular.scheduleJob(alertcron, async function () {
+            Claim.findById(data._id)
+              .populate({
+                path: "computer",
+                model: "Computer",
+              })
+              .populate({
+                path: "labo",
+                model: "Laboratory",
+              })
+              .populate({
+                path: "bloc",
+                model: "Bloc",
+              })
+              .populate({
+                path: "computer",
+                model: "Computer",
+              })
+              .populate({
+                path: "createdBy",
+                model: "User",
+              })
+              .populate({
+                path: "toAddSoftware",
+                model: "Software",
+              })
+              .exec()
+              .then(async (claim) => {
+                console.log("claim: ", claim);
+                if (claim.status === "unprocessed") {
+                  await admin.messaging().sendMulticast({
+                    data: { routeName: "TO_REPAIR" },
+                    tokens: user.fcm_key,
+                    notification: {
+                      title: "Attention!!",
+                      body: `vous avez une réclamation non traitée envoyée par l'enseignent ${user.fullname}`,
+                    },
+                  });
+                  const notificationData = {
+                    title: "Attention!!",
+                    description: `vous avez une réclamation non traitée envoyée par le l'enseignent ${user.fullname}`,
+                    createdBy: claimData.createdBy,
+                    assignedTo: claimData.assignedTo,
+                    targetScreen: "CLAIM_DETAIL",
+                    data: { claim },
+                  };
+                  await Notification.create(notificationData);
+                }
+              })
+              .catch((err) => console.log(err));
+          });
+          Schedular.scheduleJob(mailcron, async function () {
             try {
-              sendEmail({
+              await sendEmail({
                 email: "hassene.ayoub@yahoo.fr",
                 subject: "Expiration délai du réclamation",
                 message,
               });
               console.log("email sent");
             } catch (err) {
-              return next(
-                new ErrorResponse("Email n'a pas pu être envoyé", 500)
-              );
+              console.log("Email n'a pas pu être envoyé");
             }
           });
           return res.send(data);
