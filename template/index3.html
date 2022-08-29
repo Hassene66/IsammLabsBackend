@@ -426,6 +426,9 @@
                                               <img
                                                 style="max-width: 150px"
                                                 alt="IsammLabs"
+                                                height="150px"
+                                                width="200px"
+                                                src="https://www.kindpng.com/picc/m/413-4138214_transparent-thermometer-clip-art-png-high-temperature-warning.png"
                                               />
                                             </th>
                                             <th
@@ -434,7 +437,7 @@
                                                 font-weight: 400;
                                               "
                                             >
-                                              22/07/2022
+                                              {{:Date_now}}
                                             </th>
                                           </tr>
                                         </thead>
@@ -464,7 +467,7 @@
                                                   "
                                                   >Référence réclamation</span
                                                 >
-                                                *****ez54z52o
+                                                {{:Claim_data._id}}
                                               </p>
                                               <p
                                                 style="
@@ -502,7 +505,7 @@
                                                   "
                                                   >Titre réclamation</span
                                                 >
-                                                Installer python
+                                                {{:Claim_data.title}}
                                               </p>
                                               <!-- <p style="font-size:14px;margin:0 0 0 0;"><span style="font-weight:bold;display:inline-block;min-width:146px">Order amount</span> Rs. 6000.00</p> -->
                                             </td>
@@ -533,7 +536,7 @@
                                                   "
                                                   >De la part de prof</span
                                                 >
-                                                Marouene Ayoub
+                                                {{:Prof_fullName}}
                                               </p>
                                               <p
                                                 style="
@@ -550,7 +553,7 @@
                                                   "
                                                   >Email prof</span
                                                 >
-                                                marouene46@gmail.com
+                                                {{:Prof_email}}
                                               </p>
                                               <p
                                                 style="
@@ -567,7 +570,7 @@
                                                   "
                                                   >Bloc
                                                 </span>
-                                                Audio visuelle
+                                                {{:Claim_data?.bloc?.label}}
                                               </p>
                                               <p
                                                 style="
@@ -583,7 +586,7 @@
                                                     font-size: 13px;
                                                   "
                                                   >Type réclamation</span
-                                                >Installation logiciel
+                                                >{{:Claim_data?.claimType}}
                                               </p>
                                               <p
                                                 style="
@@ -598,9 +601,8 @@
                                                     font-weight: bold;
                                                     font-size: 13px;
                                                   "
-                                                  >Le(s) ordinateur(s)
-                                                  concerné</span
-                                                >PC1, PC6
+                                                  >L'ordinateur concerné</span
+                                                >{{:Claim_data.computer.label}}
                                               </p>
                                             </td>
                                             <td
@@ -625,7 +627,7 @@
                                                   "
                                                   >Pour le technicien</span
                                                 >
-                                                Hassene Ayoub
+                                                {{:Tech_fullName}}
                                               </p>
                                               <p
                                                 style="
@@ -642,7 +644,7 @@
                                                   "
                                                   >Email technicien</span
                                                 >
-                                                hassene.ayoub@outlook.com
+                                                {{:Tech_email}}
                                               </p>
                                               <p
                                                 style="
@@ -659,7 +661,7 @@
                                                   "
                                                   >Laboratoire</span
                                                 >
-                                                Lab 23
+                                                {{:Claim_data.labo.label}}
                                               </p>
                                               <p
                                                 style="
@@ -675,7 +677,8 @@
                                                     font-size: 13px;
                                                   "
                                                   >Durée de la demande</span
-                                                >du 07/08/2022 à 14/07/2022
+                                                >du {{:Claim_Start_date}} à
+                                                {{:Claim_end_date}}
                                               </p>
                                               <p
                                                 style="
@@ -690,10 +693,10 @@
                                                     font-weight: bold;
                                                     font-size: 13px;
                                                   "
-                                                  >Description</span
+                                                  >Description du
+                                                  réclamation</span
                                                 >
-                                                installer le logiciel python
-                                                dans les pcs 14 et 6
+                                                {{:Claim_data.description}}
                                               </p>
                                             </td>
                                           </tr>

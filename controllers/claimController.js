@@ -5,6 +5,7 @@ const Notification = require("../models/notificationModal");
 const User = require("../models/userModal");
 const jsrender = require("jsrender");
 const Schedular = require("node-schedule");
+const moment = require("moment");
 
 const dateToCron = (date) => {
   const minutes = date.getMinutes();
@@ -14,28 +15,34 @@ const dateToCron = (date) => {
   console.log(`${minutes} ${hours} ${days} ${months} ${"*"}`);
   return `${minutes} ${hours} ${days} ${months} ${"*"}`;
 };
+const template = jsrender.templates("./template/index3.html");
+
 function addMinutes(numOfMinutes, date = new Date()) {
   date.setMinutes(date.getMinutes() + numOfMinutes);
 
   return date;
 }
-const template = jsrender.templates("./template/index3.html");
+
 //Create new Claim
 exports.createClaim = async (req, res) => {
   // Request validation
   const claimData = req.body;
   let TechnicianData = {};
   let teacherData = {};
+  let populData = null;
+  let message = {};
   if (Object.keys(req.body).length === 0) {
     return res.status(400).send({
       message: "Claim content can not be empty",
     });
   }
   User.findById(claimData.createdBy).then((teacherUser) => {
-    teacherData.fullname = teacherUser.fullname;
+    teacherData.fullname = teacherUser?.fullname;
+    teacherData.email = teacherUser?.email;
   });
   // Create a Claim
   const claim = new Claim(claimData);
+
   User.findById(claimData.assignedTo)
     .select("+fcm_key")
     .then((user) => {
@@ -50,7 +57,8 @@ exports.createClaim = async (req, res) => {
       return user;
     })
     .then((user) => {
-      TechnicianData.fullname = user.fullname;
+      TechnicianData.fullname = user?.fullname;
+      TechnicianData.email = user?.email;
       const notificationData = {
         title: "Nouvelle réclamation!",
         description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
@@ -60,47 +68,63 @@ exports.createClaim = async (req, res) => {
       };
       return Notification.create(notificationData);
     })
-    .then(() => {
-      claim
-        .populate({
-          path: "computer",
-          model: "Computer",
-        })
-        .populate({
-          path: "labo",
-          model: "Laboratory",
-        })
-        .populate({
-          path: "bloc",
-          model: "Bloc",
-        })
-        .populate({
-          path: "computer",
-          model: "Computer",
-        })
-        .populate({
-          path: "createdBy",
-          model: "User",
-        })
-        .then((data) => console.log(data));
-    })
     .then(
       () => {
         claim.save().then((data) => {
-          const message = template.render({
-            Tech_fullName: TechnicianData.fullname,
-            Prof_fullName: teacherData.fullname,
-            Claim_data: data,
-          });
-          // add a week to the current date
-          let date = new Date(data.createdAt);
+          Claim.findById(data._id)
+            .populate({
+              path: "computer",
+              model: "Computer",
+            })
+            .populate({
+              path: "labo",
+              model: "Laboratory",
+            })
+            .populate({
+              path: "bloc",
+              model: "Bloc",
+            })
+            .populate({
+              path: "computer",
+              model: "Computer",
+            })
+            .populate({
+              path: "createdBy",
+              model: "User",
+            })
+            .exec((err, populatedData) => {
+              console.log(populatedData);
+              populData = populatedData;
+              message = template.render({
+                Tech_fullName: TechnicianData?.fullname,
+                Prof_fullName: teacherData?.fullname,
+                Claim_data: populData,
+                Prof_email: teacherData?.email,
+                Tech_email: TechnicianData?.email,
+                Claim_Start_date: startingDate,
+                Claim_end_date: endingDate,
+                Date_now: moment().format("DD/MM/YYYY"),
+              });
 
+              // Date_Reclamation: DateTime.fromISO(
+              //   data?.createdAt
+              // ).toLocaleString(),
+            });
+          // add a week to the current date
+          let date = new Date(data?.createdAt);
+          const momentDate = moment(data?.createdAt);
+          const startingDate = momentDate.format("DD/MM/YYYY");
+          console.log("starting Date", startingDate);
+          // format the date using luxon
+          const momentEndingDate = momentDate.add(7, "d");
+          const endingDate = momentEndingDate.format("DD/MM/YYYY");
+          console.log("ending Date", endingDate);
           // convert to cron time
           const cron = dateToCron(addMinutes(1, date));
           Schedular.scheduleJob(cron, async function () {
             try {
               sendEmail({
-                email: "marwen.ayoub@outlook.com",
+                email: "hassene.ayoub@yahoo.fr",
                 subject: "Expiration délai du réclamation",
                 message,
               });
