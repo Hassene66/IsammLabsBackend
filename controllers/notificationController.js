@@ -1,3 +1,4 @@
+const { populate } = require("../models/notificationModal");
 const Notification = require("../models/notificationModal");
 
 //Create new Notification
@@ -32,7 +33,17 @@ exports.findAllNotifications = (req, res) => {
   const data = req.query;
   Notification.find(data)
     .populate(["assignedTo", "createdBy"])
+    .populate({
+      path: "data",
+      populate: [
+        { path: "computer", model: "Computer" },
+        { path: "labo", model: "Laboratory" },
+        { path: "bloc", model: "Bloc" },
+        { path: "createdBy", model: "User" },
+      ],
+    })
     .sort("-createdAt")
+    .exec()
     .then((notifications) => {
       res.send(notifications);
     })
