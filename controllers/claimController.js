@@ -117,7 +117,7 @@ exports.createClaim = async (req, res, next) => {
         const momentEndingDate = momentDate.add(7, "d");
         const endingDate = momentEndingDate.format("DD/MM/YYYY");
         // convert to cron time
-        const mailcron = dateToCron(addMinutes(1, date));
+        const mailcron = dateToCron(momentEndingDate);
         const remindercron = dateToCron(momentDate.add(2, "d"));
         Schedular.scheduleJob(remindercron, async function () {
           getPopulatedData(data._id)
@@ -145,16 +145,27 @@ exports.createClaim = async (req, res, next) => {
             .catch((err) => console.log(err));
         });
         Schedular.scheduleJob(mailcron, async function () {
-          try {
-            await sendEmail({
-              email: "hassene.ayoub@yahoo.fr",
-              subject: "Expiration délai du réclamation",
-              message,
+          Claim.findById(data?.id)
+            .then((refetchedClaim) => {
+              if (
+                refetchedClaim.status === "unprocessed" ||
+                refetchedClaim.status === "in_progress"
+              ) {
+                try {
+                  sendEmail({
+                    email: "hassene.ayoub@yahoo.fr",
+                    subject: "Expiration délai du réclamation",
+                    message,
+                  });
+                  console.log("email sent");
+                } catch (err) {
+                  console.log(err);
+                }
+              }
+            })
+            .catch((err) => {
+              console.log(err);
             });
-            console.log("email sent");
-          } catch (err) {
-            console.log("Email n'a pas pu être envoyé");
-          }
         });
         return res.send(data);
       });
