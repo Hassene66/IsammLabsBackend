@@ -59,7 +59,7 @@ const claimSchema = new mongoose.Schema(
       enum: ["En marche", "En panne"],
       default: "En marche",
     },
-    raison: {
+    reason: {
       type: String,
     },
   },
