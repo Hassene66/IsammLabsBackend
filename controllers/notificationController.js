@@ -40,6 +40,7 @@ exports.findAllNotifications = (req, res) => {
         { path: "labo", model: "Laboratory" },
         { path: "bloc", model: "Bloc" },
         { path: "createdBy", model: "User" },
+        { path: "toAddSoftware", model: "Software" },
       ],
     })
     .sort("-createdAt")
