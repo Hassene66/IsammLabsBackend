@@ -110,15 +110,14 @@ exports.createClaim = async (req, res, next) => {
           });
         });
         // add a week to the current date
-        let date = new Date(data?.createdAt);
         const momentDate = moment(data?.createdAt);
+        const afterTwoDays = moment(data?.createdAt).add(2, "d");
+        const afterOneWeek = moment(data?.createdAt).add(7, "d");
+        const AfterElevenDays = moment(data?.createdAt).add(11, "d");
         const startingDate = momentDate.format("DD/MM/YYYY");
-        // format the date using luxon
-        const momentEndingDate = momentDate.add(7, "d");
-        const endingDate = momentEndingDate.format("DD/MM/YYYY");
-        // convert to cron time
-        const mailcron = dateToCron(addMinutes(1, date));
-        const remindercron = dateToCron(momentDate.add(1, "m").toDate());
+        const endingDate = afterOneWeek.format("DD/MM/YYYY");
+        const mailcron = dateToCron(afterOneWeek.toDate());
+        const remindercron = dateToCron(afterTwoDays.toDate());
         Schedular.scheduleJob(remindercron, async function () {
           getPopulatedData(data._id)
             .then(async (claim) => {
