@@ -118,7 +118,7 @@ exports.createClaim = async (req, res, next) => {
         const endingDate = momentEndingDate.format("DD/MM/YYYY");
         // convert to cron time
         const mailcron = dateToCron(addMinutes(1, date));
-        const remindercron = dateToCron(momentDate.add(2, "d"));
+        const remindercron = dateToCron(momentDate.add(1, "m").toDate());
         Schedular.scheduleJob(remindercron, async function () {
           getPopulatedData(data._id)
             .then(async (claim) => {
