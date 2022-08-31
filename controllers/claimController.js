@@ -75,7 +75,8 @@ exports.createClaim = async (req, res, next) => {
         description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
         createdBy: claimData.createdBy,
         assignedTo: claimData.assignedTo,
-        targetScreen: "TO_REPAIR",
+        targetScreen: "CLAIM_DETAIL",
+        data: claim,
       };
       await Notification.create(notificationData);
 
@@ -83,7 +84,7 @@ exports.createClaim = async (req, res, next) => {
     })
     .then(async (user) => {
       await admin.messaging().sendMulticast({
-        data: { routeName: "TO_REPAIR" },
+        data: { routeName: "CLAIM_DETAIL" },
         tokens: user.fcm_key,
         notification: {
           title: "Nouvelle réclamation!",
@@ -117,22 +118,22 @@ exports.createClaim = async (req, res, next) => {
         const endingDate = momentEndingDate.format("DD/MM/YYYY");
         // convert to cron time
         const mailcron = dateToCron(addMinutes(1, date));
-        const alertcron = dateToCron(addMinutes(1, date));
-        Schedular.scheduleJob(alertcron, async function () {
+        const remindercron = dateToCron(momentDate.add(2, "d"));
+        Schedular.scheduleJob(remindercron, async function () {
           getPopulatedData(data._id)
             .then(async (claim) => {
               if (claim.status === "unprocessed") {
                 await admin.messaging().sendMulticast({
-                  data: { routeName: "TO_REPAIR" },
+                  data: { routeName: "CLAIM_DETAIL" },
                   tokens: user.fcm_key,
                   notification: {
                     title: "Attention!!",
-                    body: `vous avez une réclamation non traitée envoyée par l'enseignent ${user.fullname}`,
+                    body: `vous avez une réclamation non encore traitée par l'enseignant ${user.fullname}`,
                   },
                 });
                 const notificationData = {
                   title: "Attention!!",
-                  description: `vous avez une réclamation non traitée envoyée par le l'enseignent ${user.fullname}`,
+                  description: `vous avez une réclamation non encore traitée par l'enseignant ${user.fullname}`,
                   createdBy: claimData.createdBy,
                   assignedTo: claimData.assignedTo,
                   targetScreen: "CLAIM_DETAIL",
