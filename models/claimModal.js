@@ -59,6 +59,9 @@ const claimSchema = new mongoose.Schema(
       enum: ["En marche", "En panne"],
       default: "En marche",
     },
+    raison: {
+      type: String,
+    },
   },
   { timestamps: true }
 );
