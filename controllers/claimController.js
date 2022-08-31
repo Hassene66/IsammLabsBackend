@@ -75,7 +75,8 @@ exports.createClaim = async (req, res, next) => {
         description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
         createdBy: claimData.createdBy,
         assignedTo: claimData.assignedTo,
-        targetScreen: "TO_REPAIR",
+        targetScreen: "CLAIM_DETAIL",
+        data: claim,
       };
       await Notification.create(notificationData);
 
@@ -83,7 +84,7 @@ exports.createClaim = async (req, res, next) => {
     })
     .then(async (user) => {
       await admin.messaging().sendMulticast({
-        data: { routeName: "TO_REPAIR" },
+        data: { routeName: "CLAIM_DETAIL" },
         tokens: user.fcm_key,
         notification: {
           title: "Nouvelle réclamation!",
@@ -123,7 +124,7 @@ exports.createClaim = async (req, res, next) => {
             .then(async (claim) => {
               if (claim.status === "unprocessed") {
                 await admin.messaging().sendMulticast({
-                  data: { routeName: "TO_REPAIR" },
+                  data: { routeName: "CLAIM_DETAIL" },
                   tokens: user.fcm_key,
                   notification: {
                     title: "Attention!!",
