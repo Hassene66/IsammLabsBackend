@@ -39,7 +39,8 @@ const claimSchema = new mongoose.Schema(
       enum: ["windows", "linux", "macos"],
     },
     toUpdateSoftware: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Software",
     },
     bloc: {
       type: mongoose.Schema.Types.ObjectId,
