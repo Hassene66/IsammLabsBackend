@@ -110,15 +110,18 @@ exports.createClaim = async (req, res, next) => {
           });
         });
         // add a week to the current date
-        let date = new Date(data?.createdAt);
         const momentDate = moment(data?.createdAt);
+        const afterTwoDays = moment(data?.createdAt).add(1, "minutes");
+        const afterOneWeek = moment(data?.createdAt).add(2, "minutes");
+        const AfterElevenDays = moment(data?.createdAt).add(3, "minutes");
+
         const startingDate = momentDate.format("DD/MM/YYYY");
-        // format the date using luxon
-        const momentEndingDate = momentDate.add(7, "d");
-        const endingDate = momentEndingDate.format("DD/MM/YYYY");
-        // convert to cron time
-        const mailcron = dateToCron(momentEndingDate);
-        const remindercron = dateToCron(momentDate.add(2, "d"));
+        const endingDate = afterOneWeek.format("DD/MM/YYYY");
+
+        const remindercron = dateToCron(afterTwoDays.toDate());
+        const alertcron = dateToCron(afterOneWeek.toDate());
+        const mailcron = dateToCron(AfterElevenDays.toDate());
+
         Schedular.scheduleJob(remindercron, async function () {
           getPopulatedData(data._id)
             .then(async (claim) => {
@@ -144,28 +147,87 @@ exports.createClaim = async (req, res, next) => {
             })
             .catch((err) => console.log(err));
         });
-        Schedular.scheduleJob(mailcron, async function () {
-          Claim.findById(data?.id)
-            .then((refetchedClaim) => {
-              if (
-                refetchedClaim.status === "unprocessed" ||
-                refetchedClaim.status === "in_progress"
-              ) {
-                try {
-                  sendEmail({
-                    email: "hassene.ayoub@yahoo.fr",
-                    subject: "Expiration délai du réclamation",
-                    message,
-                  });
-                  console.log("email sent");
-                } catch (err) {
-                  console.log(err);
-                }
+        Schedular.scheduleJob(alertcron, async function () {
+          getPopulatedData(data?._id)
+            .then(async (refetchedClaim) => {
+              if (refetchedClaim.status === "unprocessed") {
+                await admin.messaging().sendMulticast({
+                  data: { routeName: "CLAIM_DETAIL" },
+                  tokens: user.fcm_key,
+                  notification: {
+                    title: "Attention!!",
+                    body: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
+                  },
+                });
+                const notificationData = {
+                  title: "Attention!!",
+                  description: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
+                  createdBy: claimData.createdBy,
+                  assignedTo: claimData.assignedTo,
+                  targetScreen: "CLAIM_DETAIL",
+                  data: claim,
+                };
+                await Notification.create(notificationData);
+              } else if (refetchedClaim.status === "in_progress") {
+                await admin.messaging().sendMulticast({
+                  data: { routeName: "CLAIM_DETAIL" },
+                  tokens: user.fcm_key,
+                  notification: {
+                    title: "Avertissement!!",
+                    body: `Vous avez une demande inachevée qui a dépassé le délai fixé d'une semaine soumise par l'enseignant ${user.fullname}`,
+                  },
+                });
+                const notificationData = {
+                  title: "Avertissement!!",
+                  description: `Vous avez une demande inachevée qui a dépassé le délai fixé d'une semaine soumise par l'enseignant ${user.fullname}`,
+                  createdBy: claimData.createdBy,
+                  assignedTo: claimData.assignedTo,
+                  targetScreen: "CLAIM_DETAIL",
+                  data: claim,
+                };
+                await Notification.create(notificationData);
               }
             })
             .catch((err) => {
               console.log(err);
             });
+        });
+        // code of cron job
+        Schedular.scheduleJob(mailcron, async function () {
+          getPopulatedData(claim?.id).then(async (refetchedDataMail) => {
+            if (
+              refetchedDataMail.status !== "resolved" &&
+              refetchedDataMail.status !== "not_resolved"
+            ) {
+              await admin.messaging().sendMulticast({
+                data: { routeName: "CLAIM_DETAIL" },
+                tokens: user.fcm_key,
+                notification: {
+                  title: "Réclamation expirée !!",
+                  body: `Vous avez une demande inachevée qui a dépassé le délai fixé par 4 jours soumise par l'enseignant ${user.fullname}`,
+                },
+              });
+              const notificationData = {
+                title: "Réclamation expirée !!",
+                description: `Vous avez une demande inachevée qui a dépassé le délai fixé par 4 jours soumise par l'enseignant ${user.fullname}`,
+                createdBy: claimData.createdBy,
+                assignedTo: claimData.assignedTo,
+                targetScreen: "CLAIM_DETAIL",
+                data: claim,
+              };
+              await Notification.create(notificationData);
+              try {
+                sendEmail({
+                  email: "hassene.ayoub@yahoo.fr",
+                  subject: "Expiration délai du réclamation",
+                  message,
+                });
+                console.log("email sent");
+              } catch (err) {
+                console.log(err);
+              }
+            }
+          });
         });
         return res.send(data);
       });
