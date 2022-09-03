@@ -1,12 +1,12 @@
 const admin = require("firebase-admin");
 const Claim = require("../models/claimModal");
 const sendEmail = require("../services/sendEmail");
+const Computer = require("../models/computerModal");
 const Notification = require("../models/notificationModal");
 const User = require("../models/userModal");
 const jsrender = require("jsrender");
 const Schedular = require("node-schedule");
 const moment = require("moment");
-const ErrorResponse = require("../utils/errorResponse");
 
 const dateToCron = (date) => {
   const minutes = date.getMinutes();
@@ -111,9 +111,9 @@ exports.createClaim = async (req, res, next) => {
         });
         // add a week to the current date
         const momentDate = moment(data?.createdAt);
-        const afterTwoDays = moment(data?.createdAt).add(1, "minutes");
-        const afterOneWeek = moment(data?.createdAt).add(2, "minutes");
-        const AfterElevenDays = moment(data?.createdAt).add(3, "minutes");
+        const afterTwoDays = moment(data?.createdAt).add(2, "minutes");
+        const afterOneWeek = moment(data?.createdAt).add(3, "minutes");
+        const AfterElevenDays = moment(data?.createdAt).add(4, "minutes");
 
         const startingDate = momentDate.format("DD/MM/YYYY");
         const endingDate = afterOneWeek.format("DD/MM/YYYY");
@@ -318,7 +318,6 @@ exports.updateClaim = async (req, res) => {
       message: "Claim content can not be empty",
     });
   }
-
   // Find and update claim with the request body
   Claim.findByIdAndUpdate(req.params.claimId, req.body, { new: true })
     .then((claim) => {
@@ -327,6 +326,76 @@ exports.updateClaim = async (req, res) => {
           message: "Claim not found with id " + req.params.claimId,
         });
       }
+      if (!claim.isConfirmed) {
+        if (req.body.status && req.body.status !== "unprocessed") {
+          User.findById(claim?.createdBy)
+            .select("+fcm_key")
+            .then((teacherUser) => teacherUser)
+            .then(async (teacherUser) => {
+              try {
+                User.findById(claim?.assignedTo).then(
+                  async (technicianUser) => {
+                    const notificationData = {
+                      title: "M-à-j du réclamation",
+                      description:
+                        req.body.status && req.body.status === "in_progress"
+                          ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
+                          : req.body.status && req.body.status === "resolved"
+                          ? `Une réclamation est résolu et en attente de votre confirmation.`
+                          : req.body.status &&
+                            req.body.status === "not_resolved"
+                          ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
+                          : "",
+                      createdBy: claim.createdBy,
+                      assignedTo: claim.assignedTo,
+                      targetScreen: "CLAIM_DETAIL",
+                      data: claim,
+                    };
+                    await Notification.create(notificationData);
+
+                    await admin.messaging().sendMulticast({
+                      data: { routeName: "CLAIM_DETAIL" },
+                      tokens: teacherUser.fcm_key,
+                      notification: {
+                        title: "M-à-j du réclamation!",
+                        body:
+                          req.body.status && req.body.status === "in_progress"
+                            ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
+                            : req.body.status && req.body.status === "resolved"
+                            ? `Une réclamation est résolu par le technicien ${technicianUser.fullname} et en attente de votre confirmation.`
+                            : req.body.status &&
+                              req.body.status === "not_resolved"
+                            ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
+                            : "",
+                      },
+                    });
+                  }
+                );
+              } catch (err) {
+                console.log(err);
+              }
+            });
+        }
+      }
+      if (claim.approved !== undefined) {
+        if (claim.approved) {
+          if (claim.claimType === "software" && claim.type === "newSoftware") {
+            const softwareInstalledIn = null;
+            switch (claim?.installedIn) {
+              case "macos":
+                softwareInstalledIn = macos;
+                break;
+
+              default:
+                break;
+            }
+            Computer.findByIdAndUpdate(claim?.computer, { $push: {} }).then(
+              (computer) => {}
+            );
+          }
+        }
+      }
+
       return res.send(claim);
     })
     .catch((err) => {

@@ -59,6 +59,13 @@ const claimSchema = new mongoose.Schema(
       enum: ["En marche", "En panne"],
       default: "En marche",
     },
+    isConfirmed: {
+      type: Boolean,
+      default: false,
+    },
+    approved: {
+      type: Boolean,
+    },
   },
   { timestamps: true }
 );
