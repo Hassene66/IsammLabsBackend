@@ -63,6 +63,13 @@ const claimSchema = new mongoose.Schema(
     reason: {
       type: String,
     },
+    isConfirmed: {
+      type: Boolean,
+      default: false,
+    },
+    isApproved: {
+      type: Boolean,
+    },
   },
   { timestamps: true }
 );
