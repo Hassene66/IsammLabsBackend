@@ -170,8 +170,10 @@ exports.findAllClaims = async (req, res) => {
   const data = req.query;
   let skip = undefined;
   let limit = undefined;
-  skip = (data?.offset - 1) * data?.size;
-  limit = data?.size;
+  if (data?.offset && data?.size) {
+    skip = (data?.offset - 1) * data?.size;
+    limit = data?.size;
+  }
   Claim.find(data)
     .sort("-createdAt")
     .populate({
