@@ -39,7 +39,8 @@ const claimSchema = new mongoose.Schema(
       enum: ["windows", "linux", "macos"],
     },
     toUpdateSoftware: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Software",
     },
     bloc: {
       type: mongoose.Schema.Types.ObjectId,
@@ -59,11 +60,14 @@ const claimSchema = new mongoose.Schema(
       enum: ["En marche", "En panne"],
       default: "En marche",
     },
+    reason: {
+      type: String,
+    },
     isConfirmed: {
       type: Boolean,
       default: false,
     },
-    approved: {
+    isApproved: {
       type: Boolean,
     },
   },

@@ -274,6 +274,10 @@ exports.findAllClaims = async (req, res) => {
       path: "toAddSoftware",
       model: "Software",
     })
+    .populate({
+      path: "toUpdateSoftware",
+      model: "Software",
+    })
     .skip(skip)
     .limit(limit)
     .exec()
