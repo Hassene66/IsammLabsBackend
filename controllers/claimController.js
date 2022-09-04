@@ -315,6 +315,7 @@ exports.findClaim = async (req, res) => {
     });
 };
 // Update a claim
+let technicianFetchedData = undefined;
 exports.updateClaim = async (req, res) => {
   // Validate Request
   if (Object.keys(req.body).length === 0) {
@@ -336,67 +337,82 @@ exports.updateClaim = async (req, res) => {
             .select("+fcm_key")
             .then((teacherUser) => teacherUser)
             .then(async (teacherUser) => {
-              try {
-                User.findById(claim?.assignedTo).then(
-                  async (technicianUser) => {
-                    const notificationData = {
-                      title: "M-à-j du réclamation",
-                      description:
-                        req.body.status && req.body.status === "in_progress"
-                          ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
-                          : req.body.status && req.body.status === "resolved"
-                          ? `Une réclamation est résolu et en attente de votre confirmation.`
-                          : req.body.status &&
-                            req.body.status === "not_resolved"
-                          ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
-                          : "",
-                      createdBy: claim.createdBy,
-                      assignedTo: claim.assignedTo,
-                      targetScreen: "CLAIM_DETAIL",
-                      data: claim,
-                    };
-                    await Notification.create(notificationData);
+              User.findById(claim?.assignedTo).then(async (technicianUser) => {
+                technicianFetchedData = technicianUser;
+                const notificationData = {
+                  title: "M-à-j du réclamation",
+                  description:
+                    req.body.status && req.body.status === "in_progress"
+                      ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
+                      : req.body.status && req.body.status === "resolved"
+                      ? `Une réclamation est résolu et en attente de votre confirmation.`
+                      : req.body.status && req.body.status === "not_resolved"
+                      ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
+                      : "",
+                  createdBy: claim.createdBy,
+                  assignedTo: claim.assignedTo,
+                  targetScreen: "CLAIM_DETAIL",
+                  data: claim,
+                };
+                await Notification.create(notificationData);
 
-                    await admin.messaging().sendMulticast({
-                      data: { routeName: "CLAIM_DETAIL" },
-                      tokens: teacherUser.fcm_key,
-                      notification: {
-                        title: "M-à-j du réclamation!",
-                        body:
-                          req.body.status && req.body.status === "in_progress"
-                            ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
-                            : req.body.status && req.body.status === "resolved"
-                            ? `Une réclamation est résolu par le technicien ${technicianUser.fullname} et en attente de votre confirmation.`
-                            : req.body.status &&
-                              req.body.status === "not_resolved"
-                            ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
-                            : "",
-                      },
+                await admin.messaging().sendMulticast({
+                  data: { routeName: "CLAIM_DETAIL" },
+                  tokens: teacherUser.fcm_key,
+                  notification: {
+                    title: "M-à-j du réclamation!",
+                    body:
+                      req.body.status && req.body.status === "in_progress"
+                        ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
+                        : req.body.status && req.body.status === "resolved"
+                        ? `Une réclamation est résolu par le technicien ${technicianUser.fullname} et en attente de votre confirmation.`
+                        : req.body.status && req.body.status === "not_resolved"
+                        ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
+                        : "",
+                  },
+                });
+              });
+              if (claim.isApproved !== undefined) {
+                if (claim.isApproved) {
+                  if (
+                    claim.claimType === "software" &&
+                    claim.type === "newSoftware"
+                  ) {
+                    Computer.findByIdAndUpdate(claim?.computer, {
+                      $push: { [claim?.installedIn]: [claim?.toAddSoftware] },
+                    }).then(async (computer) => {
+                      await admin.messaging().sendMulticast({
+                        data: { routeName: "CLAIM_DETAIL" },
+                        tokens: technicianFetchedData.fcm_key,
+                        notification: {
+                          title: "Attention!!",
+                          body: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
+                        },
+                      });
+                      const notificationData = {
+                        title: "Attention!!",
+                        description: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
+                        createdBy: claimData.createdBy,
+                        assignedTo: claimData.assignedTo,
+                        targetScreen: "CLAIM_DETAIL",
+                        data: claim,
+                      };
+                      await Notification.create(notificationData);
+                      res.send(computer);
+                    });
+                  } else if (
+                    claim?.claimType === "hardware" &&
+                    claim?.state === "En panne"
+                  ) {
+                    Computer.findByIdAndUpdate(claim?.computer, {
+                      $set: { isWorking: "en marche" },
+                    }).then((computer) => {
+                      console.log(computer);
                     });
                   }
-                );
-              } catch (err) {
-                console.log(err);
+                }
               }
             });
-        }
-      }
-      if (claim.approved !== undefined) {
-        if (claim.approved) {
-          if (claim.claimType === "software" && claim.type === "newSoftware") {
-            const softwareInstalledIn = null;
-            switch (claim?.installedIn) {
-              case "macos":
-                softwareInstalledIn = macos;
-                break;
-
-              default:
-                break;
-            }
-            Computer.findByIdAndUpdate(claim?.computer, { $push: {} }).then(
-              (computer) => {}
-            );
-          }
         }
       }
 
