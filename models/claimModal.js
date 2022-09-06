@@ -65,7 +65,6 @@ const claimSchema = new mongoose.Schema(
     },
     isConfirmed: {
       type: Boolean,
-      default: false,
     },
     isApproved: {
       type: Boolean,
