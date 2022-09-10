@@ -42,11 +42,15 @@ function getPopulatedData(id) {
       path: "createdBy",
       model: "User",
     })
+    .populate({
+      path: "assignedTo",
+      model: "User",
+    })
     .exec();
 }
 
 //Create new Claim
-exports.createClaim = async (req, res, next) => {
+exports.createClaim = async (req, res) => {
   // Request validation
   const claimData = req.body;
   let TechnicianData = {};
@@ -58,44 +62,26 @@ exports.createClaim = async (req, res, next) => {
       message: "Claim content can not be empty",
     });
   }
-  User.findById(claimData.createdBy).then((teacherUser) => {
-    teacherData.fullname = teacherUser?.fullname;
-    teacherData.email = teacherUser?.email;
-  });
-  // Create a Claim
-  const claim = new Claim(claimData);
-
-  User.findById(claimData.assignedTo)
+  User.findById(claimData.createdBy)
     .select("+fcm_key")
-    .then(async (user) => {
-      TechnicianData.fullname = user?.fullname;
-      TechnicianData.email = user?.email;
-      const notificationData = {
-        title: "Nouvelle réclamation!",
-        description: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
-        createdBy: claimData.createdBy,
-        assignedTo: claimData.assignedTo,
-        targetScreen: "CLAIM_DETAIL",
-        data: claim,
-      };
-      await Notification.create(notificationData);
+    .then(async (teacherUser) => {
+      const techUser = await User.findById(claimData.assignedTo).select(
+        "+fcm_key"
+      );
+      return [teacherUser, techUser];
+    })
+    .then(async ([teacherUser, techUser]) => {
+      teacherData.fullname = teacherUser?.fullname;
+      teacherData.email = teacherUser?.email;
+      TechnicianData.fullname = techUser?.fullname;
+      TechnicianData.email = techUser?.email;
 
-      return user;
+      return [teacherUser, techUser];
     })
-    .then(async (user) => {
-      await admin.messaging().sendMulticast({
-        data: { routeName: "CLAIM_DETAIL" },
-        tokens: user.fcm_key,
-        notification: {
-          title: "Nouvelle réclamation!",
-          body: `${user.fullname} vous a ajouté une nouvelle demande de réparation`,
-        },
-      });
-      return user;
-    })
-    .then((user) => {
+    .then(([teacherUser, techUser]) => {
+      const claim = new Claim(claimData);
       claim.save().then(async (data) => {
-        getPopulatedData(data._id).then((populatedData) => {
+        getPopulatedData(data._id).then(async (populatedData) => {
           populData = populatedData;
           // console.log("populatedData: ", populatedData);
           message = template.render({
@@ -107,6 +93,24 @@ exports.createClaim = async (req, res, next) => {
             Claim_Start_date: startingDate,
             Claim_end_date: endingDate,
             Date_now: moment().format("DD/MM/YYYY"),
+          });
+          const notificationData = {
+            title: "Nouvelle réclamation!",
+            description: `${teacherUser.fullname} vous a ajouté une nouvelle demande de réparation`,
+            createdBy: claimData.createdBy,
+            assignedTo: claimData.assignedTo,
+            targetScreen: "CLAIM_DETAIL",
+            data: populatedData,
+          };
+          await Notification.create(notificationData);
+
+          await admin.messaging().sendMulticast({
+            data: { routeName: "CLAIM_DETAIL" },
+            tokens: techUser.fcm_key,
+            notification: {
+              title: "Nouvelle réclamation!",
+              body: `${teacherUser.fullname} vous a ajouté une nouvelle demande de réparation`,
+            },
           });
         });
         // add a week to the current date
@@ -128,15 +132,15 @@ exports.createClaim = async (req, res, next) => {
               if (claim.status === "unprocessed") {
                 await admin.messaging().sendMulticast({
                   data: { routeName: "CLAIM_DETAIL" },
-                  tokens: user.fcm_key,
+                  tokens: techUser.fcm_key,
                   notification: {
                     title: "Attention!!",
-                    body: `vous avez une réclamation non encore traitée par l'enseignant ${user.fullname}`,
+                    body: `vous avez une réclamation non encore traitée issue par l'enseignant ${teacherData.fullname}`,
                   },
                 });
                 const notificationData = {
                   title: "Attention!!",
-                  description: `vous avez une réclamation non encore traitée par l'enseignant ${user.fullname}`,
+                  description: `vous avez une réclamation non encore traitée issue par l'enseignant ${teacherData.fullname}`,
                   createdBy: claimData.createdBy,
                   assignedTo: claimData.assignedTo,
                   targetScreen: "CLAIM_DETAIL",
@@ -153,37 +157,37 @@ exports.createClaim = async (req, res, next) => {
               if (refetchedClaim.status === "unprocessed") {
                 await admin.messaging().sendMulticast({
                   data: { routeName: "CLAIM_DETAIL" },
-                  tokens: user.fcm_key,
+                  tokens: techUser.fcm_key,
                   notification: {
                     title: "Attention!!",
-                    body: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
+                    body: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${teacherUser.fullname}`,
                   },
                 });
                 const notificationData = {
                   title: "Attention!!",
-                  description: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
+                  description: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${teacherUser.fullname}`,
                   createdBy: claimData.createdBy,
                   assignedTo: claimData.assignedTo,
                   targetScreen: "CLAIM_DETAIL",
-                  data: claim,
+                  data: refetchedClaim,
                 };
                 await Notification.create(notificationData);
               } else if (refetchedClaim.status === "in_progress") {
                 await admin.messaging().sendMulticast({
                   data: { routeName: "CLAIM_DETAIL" },
-                  tokens: user.fcm_key,
+                  tokens: techUser?.fcm_key,
                   notification: {
                     title: "Avertissement!!",
-                    body: `Vous avez une demande inachevée qui a dépassé le délai fixé d'une semaine soumise par l'enseignant ${user.fullname}`,
+                    body: `Vous avez une demande inachevée qui a dépassé le délai fixé d'une semaine soumise par l'enseignant ${teacherUser.fullname}`,
                   },
                 });
                 const notificationData = {
                   title: "Avertissement!!",
-                  description: `Vous avez une demande inachevée qui a dépassé le délai fixé d'une semaine soumise par l'enseignant ${user.fullname}`,
+                  description: `Vous avez une demande inachevée qui a dépassé le délai fixé d'une semaine soumise par l'enseignant ${teacherUser.fullname}`,
                   createdBy: claimData.createdBy,
                   assignedTo: claimData.assignedTo,
                   targetScreen: "CLAIM_DETAIL",
-                  data: claim,
+                  data: refetchedClaim,
                 };
                 await Notification.create(notificationData);
               }
@@ -196,24 +200,24 @@ exports.createClaim = async (req, res, next) => {
         Schedular.scheduleJob(mailcron, async function () {
           getPopulatedData(claim?.id).then(async (refetchedDataMail) => {
             if (
-              refetchedDataMail.status !== "resolved" &&
-              refetchedDataMail.status !== "not_resolved"
+              refetchedDataMail?.status !== "resolved" &&
+              refetchedDataMail?.status !== "not_resolved"
             ) {
               await admin.messaging().sendMulticast({
                 data: { routeName: "CLAIM_DETAIL" },
-                tokens: user.fcm_key,
+                tokens: techUser.fcm_key,
                 notification: {
                   title: "Réclamation expirée !!",
-                  body: `Vous avez une demande inachevée qui a dépassé le délai fixé par 4 jours soumise par l'enseignant ${user.fullname}`,
+                  body: `Vous avez une demande inachevée qui a dépassé le délai fixé par 4 jours soumise par l'enseignant ${teacherUser.fullname}`,
                 },
               });
               const notificationData = {
                 title: "Réclamation expirée !!",
-                description: `Vous avez une demande inachevée qui a dépassé le délai fixé par 4 jours soumise par l'enseignant ${user.fullname}`,
+                description: `Vous avez une demande inachevée qui a dépassé le délai fixé par 4 jours soumise par l'enseignant ${teacherUser.fullname}`,
                 createdBy: claimData.createdBy,
                 assignedTo: claimData.assignedTo,
                 targetScreen: "CLAIM_DETAIL",
-                data: claim,
+                data: refetchedDataMail,
               };
               await Notification.create(notificationData);
               try {
@@ -315,7 +319,7 @@ exports.findClaim = async (req, res) => {
     });
 };
 // Update a claim
-let technicianFetchedData = undefined;
+
 exports.updateClaim = async (req, res) => {
   // Validate Request
   if (Object.keys(req.body).length === 0) {
@@ -331,26 +335,27 @@ exports.updateClaim = async (req, res) => {
           message: "Claim not found with id " + req.params.claimId,
         });
       }
-      if (!claim.isConfirmed) {
-        if (req.body.status && req.body.status !== "unprocessed") {
-          User.findById(claim?.createdBy)
-            .select("+fcm_key")
-            .then((teacherUser) => teacherUser)
-            .then(async (teacherUser) => {
-              User.findById(claim?.assignedTo).then(async (technicianUser) => {
-                technicianFetchedData = technicianUser;
+
+      if (claim?.status !== "unprocessed") {
+        User.findById(claim?.createdBy)
+          .select("+fcm_key")
+          .then(async (teacherUser) => {
+            User.findById(claim?.assignedTo)
+              .select("+fcm_key")
+              .then(async (technicianUser) => {
+                const description =
+                  claim?.status === "in_progress"
+                    ? `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`
+                    : claim?.status === "resolved"
+                    ? `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`
+                    : claim?.status === "not_resolved"
+                    ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
+                    : "";
                 const notificationData = {
                   title: "M-à-j du réclamation",
-                  description:
-                    req.body.status && req.body.status === "in_progress"
-                      ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
-                      : req.body.status && req.body.status === "resolved"
-                      ? `Une réclamation est résolu et en attente de votre confirmation.`
-                      : req.body.status && req.body.status === "not_resolved"
-                      ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
-                      : "",
-                  createdBy: claim.createdBy,
-                  assignedTo: claim.assignedTo,
+                  description,
+                  createdBy: claim?.createdBy,
+                  assignedTo: claim?.assignedTo,
                   targetScreen: "CLAIM_DETAIL",
                   data: claim,
                 };
@@ -361,59 +366,108 @@ exports.updateClaim = async (req, res) => {
                   tokens: teacherUser.fcm_key,
                   notification: {
                     title: "M-à-j du réclamation!",
-                    body:
-                      req.body.status && req.body.status === "in_progress"
-                        ? `Une réclamation est en cours de traitement par le technicien ${technicianUser.fullname}.`
-                        : req.body.status && req.body.status === "resolved"
-                        ? `Une réclamation est résolu par le technicien ${technicianUser.fullname} et en attente de votre confirmation.`
-                        : req.body.status && req.body.status === "not_resolved"
-                        ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
-                        : "",
+                    body: description,
                   },
                 });
-              });
-              if (claim.isApproved !== undefined) {
-                if (claim.isApproved) {
-                  if (
-                    claim.claimType === "software" &&
-                    claim.type === "newSoftware"
-                  ) {
-                    Computer.findByIdAndUpdate(claim?.computer, {
-                      $push: { [claim?.installedIn]: [claim?.toAddSoftware] },
-                    }).then(async (computer) => {
+
+                if (claim?.isApproved !== undefined) {
+                  if (claim?.isApproved && claim?.isConfirmed === true) {
+                    if (claim?.type === "newSoftware") {
+                      Computer.findByIdAndUpdate(claim?.computer, {
+                        $push: { [claim?.installedIn]: [claim?.toAddSoftware] },
+                      }).then(async () => {
+                        const notificationData = {
+                          title: "Bravo!!",
+                          description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                          createdBy: claim?.createdBy,
+                          assignedTo: claim?.assignedTo,
+                          targetScreen: "CLAIM_DETAIL",
+                          data: claim,
+                        };
+                        await Notification.create(notificationData);
+
+                        await admin.messaging().sendMulticast({
+                          data: { routeName: "CLAIM_DETAIL" },
+                          tokens: technicianUser?.fcm_key,
+                          notification: {
+                            title: "Bravo!!",
+                            body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                          },
+                        });
+                      });
+                    } else if (
+                      claim?.claimType === "hardware" &&
+                      claim?.state === "En panne"
+                    ) {
+                      Computer.findByIdAndUpdate(claim?.computer, {
+                        $set: { isWorking: "en marche" },
+                      }).then(async () => {
+                        await admin.messaging().sendMulticast({
+                          data: { routeName: "CLAIM_DETAIL" },
+                          tokens: technicianUser?.fcm_key,
+                          notification: {
+                            title: "Bravo!!",
+                            body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                          },
+                        });
+                        const notificationData = {
+                          title: "Bravo!!",
+                          description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                          createdBy: claim?.createdBy,
+                          assignedTo: claim?.assignedTo,
+                          targetScreen: "CLAIM_DETAIL",
+                          data: claim,
+                        };
+                        await Notification.create(notificationData);
+                      });
+                    } else if (
+                      claim?.claimType === "software" &&
+                      claim?.state === "En marche" &&
+                      claim?.type === "updateSoftware"
+                    ) {
                       await admin.messaging().sendMulticast({
                         data: { routeName: "CLAIM_DETAIL" },
-                        tokens: technicianFetchedData.fcm_key,
+                        tokens: technicianUser?.fcm_key,
                         notification: {
-                          title: "Attention!!",
-                          body: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
+                          title: "Bravo!!",
+                          body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
                         },
                       });
                       const notificationData = {
-                        title: "Attention!!",
-                        description: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${user.fullname}`,
-                        createdBy: claimData.createdBy,
-                        assignedTo: claimData.assignedTo,
+                        title: "Bravo!!",
+                        description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                        createdBy: claim?.createdBy,
+                        assignedTo: claim?.assignedTo,
                         targetScreen: "CLAIM_DETAIL",
                         data: claim,
                       };
                       await Notification.create(notificationData);
-                      res.send(computer);
-                    });
+                    }
                   } else if (
-                    claim?.claimType === "hardware" &&
-                    claim?.state === "En panne"
+                    claim?.isApproved === false &&
+                    claim?.isConfirmed === true
                   ) {
-                    Computer.findByIdAndUpdate(claim?.computer, {
-                      $set: { isWorking: "en marche" },
-                    }).then((computer) => {
-                      console.log(computer);
+                    await admin.messaging().sendMulticast({
+                      data: { routeName: "CLAIM_DETAIL" },
+                      tokens: technicianUser?.fcm_key,
+                      notification: {
+                        title: "Information!!",
+                        body: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                      },
                     });
+                    const notificationData = {
+                      title: "Information!!",
+                      description: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant. ${teacherUser?.fullname}.`,
+                      createdBy: claim?.createdBy,
+                      assignedTo: claim?.assignedTo,
+                      targetScreen: "CLAIM_DETAIL",
+                      data: claim,
+                    };
+                    await Notification.create(notificationData);
                   }
                 }
-              }
-            });
-        }
+              });
+          });
       }
 
       return res.send(claim);
