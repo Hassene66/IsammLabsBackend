@@ -85,11 +85,11 @@ exports.createClaim = async (req, res) => {
           populData = populatedData;
           // console.log("populatedData: ", populatedData);
           message = template.render({
-            Tech_fullName: TechnicianData?.fullname,
-            Prof_fullName: teacherData?.fullname,
+            Tech_fullName: techUser?.fullname,
+            Prof_fullName: teacherUser?.fullname,
             Claim_data: populData,
-            Prof_email: teacherData?.email,
-            Tech_email: TechnicianData?.email,
+            Prof_email: teacherUser?.email,
+            Tech_email: techUser?.email,
             Claim_Start_date: startingDate,
             Claim_end_date: endingDate,
             Date_now: moment().format("DD/MM/YYYY"),
