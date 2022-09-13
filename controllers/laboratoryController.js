@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const Laboratory = require("../models/laboratoryModal");
 
 //Create new Laboratory
@@ -75,7 +76,11 @@ exports.updateLaboratory = async (req, res) => {
   }
 
   // Find and update laboratory with the request body
-  Laboratory.findByIdAndUpdate(req.params.laboratoryId, req.body, { new: true })
+  Laboratory.findByIdAndUpdate(
+    req.params.laboratoryId,
+    { $addToSet: { computer: req?.body?.computer } },
+    { new: true }
+  )
     .then((laboratory) => {
       if (!laboratory) {
         return res.status(404).send({
