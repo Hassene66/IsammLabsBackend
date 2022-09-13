@@ -350,28 +350,32 @@ exports.updateClaim = async (req, res) => {
                 const description =
                   claim?.status === "in_progress"
                     ? `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`
-                    : claim?.status === "resolved"
+                    : claim?.status === "resolved" &&
+                      claim?.isConfirmed === false
                     ? `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`
-                    : claim?.status === "not_resolved"
+                    : claim?.status === "not_resolved" &&
+                      claim?.isConfirmed === false
                     ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
                     : "";
-                const notificationData = {
-                  title: "M-à-j du réclamation",
-                  description,
-                  assignedTo: claim?.createdBy,
-                  targetScreen: "CLAIM_DETAIL",
-                  data: claim,
-                };
-                await Notification.create(notificationData);
+                if (claim?.isConfirmed === false) {
+                  const notificationData = {
+                    title: "M-à-j du réclamation",
+                    description,
+                    assignedTo: claim?.createdBy,
+                    targetScreen: "CLAIM_DETAIL",
+                    data: claim,
+                  };
+                  await Notification.create(notificationData);
 
-                await admin.messaging().sendMulticast({
-                  data: { routeName: "CLAIM_DETAIL" },
-                  tokens: teacherUser.fcm_key,
-                  notification: {
-                    title: "M-à-j du réclamation!",
-                    body: description,
-                  },
-                });
+                  await admin.messaging().sendMulticast({
+                    data: { routeName: "CLAIM_DETAIL" },
+                    tokens: teacherUser.fcm_key,
+                    notification: {
+                      title: "M-à-j du réclamation!",
+                      body: description,
+                    },
+                  });
+                }
 
                 if (claim?.isApproved !== undefined) {
                   if (claim?.isApproved && claim?.isConfirmed === true) {
@@ -451,12 +455,12 @@ exports.updateClaim = async (req, res) => {
                       data: { routeName: "CLAIM_DETAIL" },
                       tokens: technicianUser?.fcm_key,
                       notification: {
-                        title: "Information!!",
+                        title: "Bravo!!",
                         body: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant ${teacherUser?.fullname}.`,
                       },
                     });
                     const notificationData = {
-                      title: "Information!!",
+                      title: "Bravo!!",
                       description: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant. ${teacherUser?.fullname}.`,
                       assignedTo: claim?.assignedTo,
                       targetScreen: "CLAIM_DETAIL",
