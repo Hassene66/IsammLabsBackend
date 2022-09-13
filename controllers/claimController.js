@@ -358,8 +358,7 @@ exports.updateClaim = async (req, res) => {
                 const notificationData = {
                   title: "M-à-j du réclamation",
                   description,
-                  createdBy: claim?.createdBy,
-                  assignedTo: claim?.assignedTo,
+                  assignedTo: claim?.createdBy,
                   targetScreen: "CLAIM_DETAIL",
                   data: claim,
                 };
@@ -383,7 +382,6 @@ exports.updateClaim = async (req, res) => {
                         const notificationData = {
                           title: "Bravo!!",
                           description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                          createdBy: claim?.createdBy,
                           assignedTo: claim?.assignedTo,
                           targetScreen: "CLAIM_DETAIL",
                           data: claim,
@@ -417,7 +415,6 @@ exports.updateClaim = async (req, res) => {
                         const notificationData = {
                           title: "Bravo!!",
                           description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                          createdBy: claim?.createdBy,
                           assignedTo: claim?.assignedTo,
                           targetScreen: "CLAIM_DETAIL",
                           data: claim,
@@ -440,7 +437,6 @@ exports.updateClaim = async (req, res) => {
                       const notificationData = {
                         title: "Bravo!!",
                         description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                        createdBy: claim?.createdBy,
                         assignedTo: claim?.assignedTo,
                         targetScreen: "CLAIM_DETAIL",
                         data: claim,
@@ -462,7 +458,6 @@ exports.updateClaim = async (req, res) => {
                     const notificationData = {
                       title: "Information!!",
                       description: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant. ${teacherUser?.fullname}.`,
-                      createdBy: claim?.createdBy,
                       assignedTo: claim?.assignedTo,
                       targetScreen: "CLAIM_DETAIL",
                       data: claim,
