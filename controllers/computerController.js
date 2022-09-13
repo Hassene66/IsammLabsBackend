@@ -82,7 +82,7 @@ exports.updateComputer = async (req, res) => {
           message: "Computer not found with id " + req.params.computerId,
         });
       }
-      sendTokenResponse(computer, 200, res);
+      return res.send(computer);
     })
     .catch((err) => {
       if (err.kind === "ObjectId") {
