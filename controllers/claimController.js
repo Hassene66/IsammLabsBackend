@@ -275,6 +275,10 @@ exports.findAllClaims = async (req, res) => {
       model: "User",
     })
     .populate({
+      path: "assignedTo",
+      model: "User",
+    })
+    .populate({
       path: "toAddSoftware",
       model: "Software",
     })
