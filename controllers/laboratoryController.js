@@ -82,7 +82,6 @@ exports.updateLaboratory = async (req, res) => {
           message: "Laboratory not found with id " + req.params.laboratoryId,
         });
       }
-      sendTokenResponse(laboratory, 200, res);
     })
     .catch((err) => {
       if (err.kind === "ObjectId") {
