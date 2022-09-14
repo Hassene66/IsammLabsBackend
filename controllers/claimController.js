@@ -357,25 +357,23 @@ exports.updateClaim = async (req, res) => {
                       claim?.isConfirmed === false
                     ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
                     : "";
-                if (claim?.isConfirmed === false) {
-                  const notificationData = {
-                    title: "M-à-j du réclamation",
-                    description,
-                    assignedTo: claim?.createdBy,
-                    targetScreen: "CLAIM_DETAIL",
-                    data: claim,
-                  };
-                  await Notification.create(notificationData);
+                const notificationData = {
+                  title: "M-à-j du réclamation",
+                  description,
+                  assignedTo: claim?.createdBy,
+                  targetScreen: "CLAIM_DETAIL",
+                  data: claim,
+                };
+                await Notification.create(notificationData);
 
-                  await admin.messaging().sendMulticast({
-                    data: { routeName: "CLAIM_DETAIL" },
-                    tokens: teacherUser.fcm_key,
-                    notification: {
-                      title: "M-à-j du réclamation!",
-                      body: description,
-                    },
-                  });
-                }
+                await admin.messaging().sendMulticast({
+                  data: { routeName: "CLAIM_DETAIL" },
+                  tokens: teacherUser.fcm_key,
+                  notification: {
+                    title: "M-à-j du réclamation!",
+                    body: description,
+                  },
+                });
 
                 if (claim?.isApproved !== undefined) {
                   if (claim?.isApproved && claim?.isConfirmed === true) {
