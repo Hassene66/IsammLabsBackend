@@ -347,46 +347,41 @@ exports.updateClaim = async (req, res) => {
             User.findById(claim?.assignedTo)
               .select("+fcm_key")
               .then(async (technicianUser) => {
-                if (
-                  claim?.isConfirmed === false ||
-                  claim?.isConfirmed === undefined
-                ) {
-                  const description = conditionalDescription();
+                const description = conditionalDescription();
 
-                  function conditionalDescription() {
-                    if (claim?.status === "in_progress")
-                      return `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`;
-                    else if (
-                      claim.isConfirmed === false &&
-                      claim.status === "resolved"
-                    )
-                      return `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`;
-                    else if (
-                      claim.isConfirmed === false &&
-                      claim.status === "not_resolved"
-                    )
-                      return `Une demande ne peut pas être résolue et est en attente de votre confirmation.`;
-                  }
-
-                  console.log("desc : " + description);
-                  const notificationData = {
-                    title: "M-à-j du réclamation",
-                    description,
-                    assignedTo: claim?.createdBy,
-                    targetScreen: "CLAIM_DETAIL",
-                    data: claim,
-                  };
-                  await Notification.create(notificationData);
-
-                  await admin.messaging().sendMulticast({
-                    data: { routeName: "CLAIM_DETAIL" },
-                    tokens: teacherUser?.fcm_key,
-                    notification: {
-                      title: "M-à-j du réclamation!",
-                      body: description,
-                    },
-                  });
+                function conditionalDescription() {
+                  if (claim?.status === "in_progress")
+                    return `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`;
+                  else if (
+                    claim.isConfirmed === false &&
+                    claim.status === "resolved"
+                  )
+                    return `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`;
+                  else if (
+                    claim.isConfirmed === false &&
+                    claim.status === "not_resolved"
+                  )
+                    return `Une demande ne peut pas être résolue et est en attente de votre confirmation.`;
                 }
+
+                console.log("desc : " + description);
+                const notificationData = {
+                  title: "M-à-j du réclamation",
+                  description,
+                  assignedTo: claim?.createdBy,
+                  targetScreen: "CLAIM_DETAIL",
+                  data: claim,
+                };
+                await Notification.create(notificationData);
+
+                await admin.messaging().sendMulticast({
+                  data: { routeName: "CLAIM_DETAIL" },
+                  tokens: teacherUser?.fcm_key,
+                  notification: {
+                    title: "M-à-j du réclamation!",
+                    body: description,
+                  },
+                });
 
                 console.log(claim.isApproved);
                 console.log(claim.isConfirmed);
