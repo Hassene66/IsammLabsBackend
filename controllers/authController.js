@@ -69,7 +69,37 @@ exports.me = async (req, res) => {
   return res.status(200).json({ success: true });
 };
 exports.logout = async (req, res) => {
-  return res.status(200).json({ success: true });
+  if (!req.headers?.fcm_key) {
+    return res.status(400).send({
+      message: "FCM key is not provided",
+    });
+  }
+
+  // Find and update user with the request body
+  User.findByIdAndUpdate(
+    req.params.userId,
+    { $pull: { fcm_key: req.headers?.fcm_key } },
+    { new: true }
+  )
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({
+          message: "User not found with id " + req.params.userId,
+        });
+      }
+      sendTokenResponse(user, 200, res);
+    })
+    .catch((err) => {
+      if (err.kind === "ObjectId") {
+        return res.status(404).send({
+          message: "User not found with id " + req.params.userId,
+        });
+      }
+      return res.status(500).send({
+        message:
+          "Something wrong updating fcm key with id " + req.params.userId,
+      });
+    });
 };
 
 // @desc Reset password
