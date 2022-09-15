@@ -347,8 +347,12 @@ exports.updateClaim = async (req, res) => {
             User.findById(claim?.assignedTo)
               .select("+fcm_key")
               .then(async (technicianUser) => {
-                if (claim?.isConfirmed === false) {
+                if (
+                  claim?.isConfirmed === false ||
+                  claim?.isConfirmed === undefined
+                ) {
                   const description = conditionalDescription();
+
                   function conditionalDescription() {
                     if (claim?.status === "in_progress")
                       return `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`;
@@ -393,15 +397,16 @@ exports.updateClaim = async (req, res) => {
                         $addToSet: {
                           [claim?.installedIn]: [claim?.toAddSoftware],
                         },
-                      }).then(async () => {
-                        const notificationData = {
-                          title: "Bravo!!",
-                          description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                          assignedTo: claim?.assignedTo,
-                          targetScreen: "CLAIM_DETAIL",
-                          data: claim,
-                        };
-                        await Notification.create(notificationData);
+                      })
+                        .then(async () => {
+                          const notificationData = {
+                            title: "Bravo!!",
+                            description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                            assignedTo: claim?.assignedTo,
+                            targetScreen: "CLAIM_DETAIL",
+                            data: claim,
+                          };
+                          await Notification.create(notificationData);
 
                           await admin.messaging().sendMulticast({
                             data: { routeName: "CLAIM_DETAIL" },
