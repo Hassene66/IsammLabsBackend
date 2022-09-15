@@ -390,17 +390,18 @@ exports.updateClaim = async (req, res) => {
                   if (claim?.isApproved && claim?.isConfirmed === true) {
                     if (claim?.type === "newSoftware") {
                       Computer.findByIdAndUpdate(claim?.computer, {
-                        $push: { [claim?.installedIn]: [claim?.toAddSoftware] },
-                      })
-                        .then(async () => {
-                          const notificationData = {
-                            title: "Bravo!!",
-                            description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                            assignedTo: claim?.assignedTo,
-                            targetScreen: "CLAIM_DETAIL",
-                            data: claim,
-                          };
-                          await Notification.create(notificationData);
+                        $addToSet: {
+                          [claim?.installedIn]: [claim?.toAddSoftware],
+                        },
+                      }).then(async () => {
+                        const notificationData = {
+                          title: "Bravo!!",
+                          description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                          assignedTo: claim?.assignedTo,
+                          targetScreen: "CLAIM_DETAIL",
+                          data: claim,
+                        };
+                        await Notification.create(notificationData);
 
                           await admin.messaging().sendMulticast({
                             data: { routeName: "CLAIM_DETAIL" },
