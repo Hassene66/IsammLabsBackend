@@ -377,7 +377,9 @@ exports.updateClaim = async (req, res) => {
                   if (claim?.isApproved && claim?.isConfirmed === true) {
                     if (claim?.type === "newSoftware") {
                       Computer.findByIdAndUpdate(claim?.computer, {
-                        $push: { [claim?.installedIn]: [claim?.toAddSoftware] },
+                        $addToSet: {
+                          [claim?.installedIn]: [claim?.toAddSoftware],
+                        },
                       }).then(async () => {
                         const notificationData = {
                           title: "Bravo!!",
