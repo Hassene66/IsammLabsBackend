@@ -347,82 +347,97 @@ exports.updateClaim = async (req, res) => {
             User.findById(claim?.assignedTo)
               .select("+fcm_key")
               .then(async (technicianUser) => {
-                const description =
-                  claim?.status === "in_progress"
-                    ? `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`
-                    : claim?.status === "resolved" &&
-                      claim?.isConfirmed === false
-                    ? `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`
-                    : claim?.status === "not_resolved" &&
-                      claim?.isConfirmed === false
-                    ? `Une demande ne peut pas être résolue et est en attente de votre confirmation.`
-                    : "";
-                const notificationData = {
-                  title: "M-à-j du réclamation",
-                  description,
-                  assignedTo: claim?.createdBy,
-                  targetScreen: "CLAIM_DETAIL",
-                  data: claim,
-                };
-                await Notification.create(notificationData);
+                if (claim?.isConfirmed === false) {
+                  const description = conditionalDescription();
+                  function conditionalDescription() {
+                    if (claim?.status === "in_progress")
+                      return `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`;
+                    else if (
+                      claim.isConfirmed === false &&
+                      claim.status === "resolved"
+                    )
+                      return `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`;
+                    else if (
+                      claim.isConfirmed === false &&
+                      claim.status === "not_resolved"
+                    )
+                      return `Une demande ne peut pas être résolue et est en attente de votre confirmation.`;
+                  }
 
-                await admin.messaging().sendMulticast({
-                  data: { routeName: "CLAIM_DETAIL" },
-                  tokens: teacherUser.fcm_key,
-                  notification: {
-                    title: "M-à-j du réclamation!",
-                    body: description,
-                  },
-                });
+                  console.log("desc : " + description);
+                  const notificationData = {
+                    title: "M-à-j du réclamation",
+                    description,
+                    assignedTo: claim?.createdBy,
+                    targetScreen: "CLAIM_DETAIL",
+                    data: claim,
+                  };
+                  await Notification.create(notificationData);
 
+                  await admin.messaging().sendMulticast({
+                    data: { routeName: "CLAIM_DETAIL" },
+                    tokens: teacherUser?.fcm_key,
+                    notification: {
+                      title: "M-à-j du réclamation!",
+                      body: description,
+                    },
+                  });
+                }
+
+                console.log(claim.isApproved);
+                console.log(claim.isConfirmed);
                 if (claim?.isApproved !== undefined) {
                   if (claim?.isApproved && claim?.isConfirmed === true) {
                     if (claim?.type === "newSoftware") {
                       Computer.findByIdAndUpdate(claim?.computer, {
                         $push: { [claim?.installedIn]: [claim?.toAddSoftware] },
-                      }).then(async () => {
-                        const notificationData = {
-                          title: "Bravo!!",
-                          description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                          assignedTo: claim?.assignedTo,
-                          targetScreen: "CLAIM_DETAIL",
-                          data: claim,
-                        };
-                        await Notification.create(notificationData);
-
-                        await admin.messaging().sendMulticast({
-                          data: { routeName: "CLAIM_DETAIL" },
-                          tokens: technicianUser?.fcm_key,
-                          notification: {
+                      })
+                        .then(async () => {
+                          const notificationData = {
                             title: "Bravo!!",
-                            body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                          },
-                        });
-                      });
+                            description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                            assignedTo: claim?.assignedTo,
+                            targetScreen: "CLAIM_DETAIL",
+                            data: claim,
+                          };
+                          await Notification.create(notificationData);
+
+                          await admin.messaging().sendMulticast({
+                            data: { routeName: "CLAIM_DETAIL" },
+                            tokens: technicianUser?.fcm_key,
+                            notification: {
+                              title: "Bravo!!",
+                              body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                            },
+                          });
+                        })
+                        .catch((err) => console.log(err));
                     } else if (
                       claim?.claimType === "hardware" &&
                       claim?.state === "En panne"
                     ) {
                       Computer.findByIdAndUpdate(claim?.computer, {
                         $set: { isWorking: "en marche" },
-                      }).then(async () => {
-                        await admin.messaging().sendMulticast({
-                          data: { routeName: "CLAIM_DETAIL" },
-                          tokens: technicianUser?.fcm_key,
-                          notification: {
+                      })
+                        .then(async () => {
+                          await admin.messaging().sendMulticast({
+                            data: { routeName: "CLAIM_DETAIL" },
+                            tokens: technicianUser?.fcm_key,
+                            notification: {
+                              title: "Bravo!!",
+                              body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                            },
+                          });
+                          const notificationData = {
                             title: "Bravo!!",
-                            body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                          },
-                        });
-                        const notificationData = {
-                          title: "Bravo!!",
-                          description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
-                          assignedTo: claim?.assignedTo,
-                          targetScreen: "CLAIM_DETAIL",
-                          data: claim,
-                        };
-                        await Notification.create(notificationData);
-                      });
+                            description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
+                            assignedTo: claim?.assignedTo,
+                            targetScreen: "CLAIM_DETAIL",
+                            data: claim,
+                          };
+                          await Notification.create(notificationData);
+                        })
+                        .catch((err) => console.log(err));
                     } else if (
                       claim?.claimType === "software" &&
                       claim?.state === "En marche" &&
