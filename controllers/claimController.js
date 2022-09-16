@@ -347,53 +347,60 @@ exports.updateClaim = async (req, res) => {
             User.findById(claim?.assignedTo)
               .select("+fcm_key")
               .then(async (technicianUser) => {
-                const description = conditionalDescription();
+                if (
+                  claim?.isConfirmed === false ||
+                  claim?.isConfirmed === undefined
+                ) {
+                  const description = conditionalDescription();
 
-                function conditionalDescription() {
-                  if (claim?.status === "in_progress")
-                    return `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`;
-                  else if (
-                    claim.isConfirmed === false &&
-                    claim.status === "resolved"
-                  )
-                    return `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`;
-                  else if (
-                    claim.isConfirmed === false &&
-                    claim.status === "not_resolved"
-                  )
-                    return `Une demande ne peut pas être résolue et est en attente de votre confirmation.`;
+                  function conditionalDescription() {
+                    if (claim?.status === "in_progress")
+                      return `Une réclamation est en cours de traitement par le technicien ${technicianUser?.fullname}.`;
+                    else if (
+                      claim.isConfirmed === false &&
+                      claim.status === "resolved"
+                    )
+                      return `Une réclamation est résolu par le technicien ${technicianUser?.fullname} et en attente de votre confirmation.`;
+                    else if (
+                      claim.isConfirmed === false &&
+                      claim.status === "not_resolved"
+                    )
+                      return `Une demande ne peut pas être résolue par le technicien ${technicianUser?.fullname} et est en attente de votre confirmation.`;
+                  }
+
+                  console.log("desc : " + description);
+                  const notificationData = {
+                    title: "M-à-j du réclamation",
+                    description,
+                    assignedTo: claim?.createdBy,
+                    targetScreen: "CLAIM_DETAIL",
+                    data: claim,
+                  };
+                  await Notification.create(notificationData);
+
+                  await admin.messaging().sendMulticast({
+                    data: { routeName: "CLAIM_DETAIL" },
+                    tokens: teacherUser?.fcm_key,
+                    notification: {
+                      title: "M-à-j du réclamation!",
+                      body: description,
+                    },
+                  });
                 }
-
-                console.log("desc : " + description);
-                const notificationData = {
-                  title: "M-à-j du réclamation",
-                  description,
-                  assignedTo: claim?.createdBy,
-                  targetScreen: "CLAIM_DETAIL",
-                  data: claim,
-                };
-                await Notification.create(notificationData);
-
-                await admin.messaging().sendMulticast({
-                  data: { routeName: "CLAIM_DETAIL" },
-                  tokens: teacherUser?.fcm_key,
-                  notification: {
-                    title: "M-à-j du réclamation!",
-                    body: description,
-                  },
-                });
 
                 console.log(claim.isApproved);
                 console.log(claim.isConfirmed);
                 if (claim?.isApproved !== undefined) {
                   if (claim?.isApproved && claim?.isConfirmed === true) {
                     if (claim?.type === "newSoftware") {
+                      console.log("ajouter software");
                       Computer.findByIdAndUpdate(claim?.computer, {
                         $addToSet: {
                           [claim?.installedIn]: [claim?.toAddSoftware],
                         },
                       })
                         .then(async () => {
+                          console.log("ajouter software step 2");
                           const notificationData = {
                             title: "Bravo!!",
                             description: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacherUser?.fullname}.`,
@@ -417,6 +424,7 @@ exports.updateClaim = async (req, res) => {
                       claim?.claimType === "hardware" &&
                       claim?.state === "En panne"
                     ) {
+                      console.log("en panne");
                       Computer.findByIdAndUpdate(claim?.computer, {
                         $set: { isWorking: "en marche" },
                       })
@@ -444,6 +452,7 @@ exports.updateClaim = async (req, res) => {
                       claim?.state === "En marche" &&
                       claim?.type === "updateSoftware"
                     ) {
+                      console.log("mise a jour logiciel");
                       await admin.messaging().sendMulticast({
                         data: { routeName: "CLAIM_DETAIL" },
                         tokens: technicianUser?.fcm_key,
@@ -465,16 +474,17 @@ exports.updateClaim = async (req, res) => {
                     claim?.isApproved === false &&
                     claim?.isConfirmed === true
                   ) {
+                    console.log("pas approuvé");
                     await admin.messaging().sendMulticast({
                       data: { routeName: "CLAIM_DETAIL" },
                       tokens: technicianUser?.fcm_key,
                       notification: {
-                        title: "Bravo!!",
+                        title: "Information!!",
                         body: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant ${teacherUser?.fullname}.`,
                       },
                     });
                     const notificationData = {
-                      title: "Bravo!!",
+                      title: "Information!!",
                       description: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant. ${teacherUser?.fullname}.`,
                       assignedTo: claim?.assignedTo,
                       targetScreen: "CLAIM_DETAIL",
