@@ -9,10 +9,10 @@ const claimRoutes = require("./routes/claimRoutes");
 const softwareRoutes = require("./routes/softwareRoute");
 const notificationRoutes = require("./routes/notificationRoutes");
 const serviceAccount = require("./issam-labs-cc4b7-firebase-adminsdk-940fo-8ae33d6802.json");
-// process.on("uncaughtException", (err) => {
-//   console.log(err.name, err.message);
-//   process.exit(1);
-// });
+process.on("uncaughtException", (err) => {
+  console.log(err.name, err.message);
+  process.exit(1);
+});
 const express = require("express");
 const cors = require("cors");
 const ConnectDB = require("./config/db");
@@ -48,9 +48,9 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () =>
   console.log(`server listening at port ${PORT} `)
 );
-// process.on("unhandledRejection", (err) => {
-//   console.log(err.name, err.message);
-//   server.close(() => {
-//     process.exit(1);
-//   });
-// });
+process.on("unhandledRejection", (err) => {
+  console.log(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
