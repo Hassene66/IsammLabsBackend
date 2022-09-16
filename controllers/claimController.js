@@ -14,7 +14,6 @@ const dateToCron = (date) => {
   const hours = date.getHours();
   const days = date.getDate();
   const months = date.getMonth() + 1;
-  console.log(`${minutes} ${hours} ${days} ${months} ${"*"}`);
   return `${minutes} ${hours} ${days} ${months} ${"*"}`;
 };
 const template = jsrender.templates("./template/index3.html");
@@ -133,6 +132,7 @@ exports.createClaim = async (req, res) => {
                     body: `vous avez une réclamation non encore traitée issue par l'enseignant ${teacherData.fullname}`,
                   },
                 });
+
                 const notificationData = {
                   title: "Attention!!",
                   description: `vous avez une réclamation non encore traitée issue par l'enseignant ${teacherData.fullname}`,
@@ -358,7 +358,7 @@ exports.updateClaim = async (req, res, next) => {
     })
     .then(async ([claim, teacher, technicien]) => {
       try {
-        if (claim?.isConfirmed == false) {
+        if (claim?.isConfirmed === false || claim?.isConfirmed === undefined) {
           function conditionalDescription() {
             if (claim?.status === "in_progress")
               return `Une réclamation est en cours de traitement par le technicien ${technicien?.fullname}.`;
@@ -374,15 +374,6 @@ exports.updateClaim = async (req, res, next) => {
 
           const description = conditionalDescription();
 
-          const notificationData = {
-            title: "M-à-j du réclamation",
-            description,
-            assignedTo: claim?.createdBy,
-            targetScreen: "CLAIM_DETAIL",
-            data: claim,
-          };
-          await Notification.create(notificationData);
-
           await admin.messaging().sendMulticast({
             data: { routeName: "CLAIM_DETAIL" },
             tokens: teacher?.fcm_key,
@@ -391,6 +382,15 @@ exports.updateClaim = async (req, res, next) => {
               body: description,
             },
           });
+
+          const notificationData = {
+            title: "M-à-j du réclamation",
+            description,
+            assignedTo: claim?.createdBy,
+            targetScreen: "CLAIM_DETAIL",
+            data: claim,
+          };
+          await Notification.create(notificationData);
         }
         if (claim?.isApproved === true && claim?.isConfirmed === true) {
           if (claim?.type === "newSoftware") {
@@ -422,7 +422,7 @@ exports.updateClaim = async (req, res, next) => {
             claim?.state === "En panne"
           ) {
             await Computer.findByIdAndUpdate(claim?.computer, {
-              $set: { isWorking: true },
+              isWorking: true,
             });
             await admin.messaging().sendMulticast({
               data: { routeName: "CLAIM_DETAIL" },
