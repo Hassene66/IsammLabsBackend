@@ -456,11 +456,7 @@ exports.updateClaim = async (req, res, next) => {
               data: claim,
             };
             await Notification.create(notificationData);
-          } else if (
-            claim?.type === "software" &&
-            claim?.state === "En marche" &&
-            claim?.type === "updateSoftware"
-          ) {
+          } else if (claim?.type === "updateSoftware") {
             await admin.messaging().sendMulticast({
               tokens: technicien?.fcm_key,
               notification: {
