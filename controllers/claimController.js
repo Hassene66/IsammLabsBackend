@@ -432,7 +432,7 @@ exports.updateClaim = async (req, res, next) => {
               },
             });
           } else if (
-            claim?.claimType === "hardware" &&
+            claim?.type === "hardware" &&
             claim?.state === "En panne"
           ) {
             await Computer.findByIdAndUpdate(claim?.computer, {
@@ -457,7 +457,7 @@ exports.updateClaim = async (req, res, next) => {
             };
             await Notification.create(notificationData);
           } else if (
-            claim?.claimType === "software" &&
+            claim?.type === "software" &&
             claim?.state === "En marche" &&
             claim?.type === "updateSoftware"
           ) {
