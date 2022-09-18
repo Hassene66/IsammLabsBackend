@@ -99,11 +99,13 @@ exports.createClaim = async (req, res) => {
           await Notification.create(notificationData);
 
           await admin.messaging().sendMulticast({
-            data: { routeName: "CLAIM_DETAIL" },
             tokens: techUser.fcm_key,
             notification: {
               title: "Nouvelle réclamation!",
               body: `${teacherUser.fullname} vous a ajouté une nouvelle demande de réparation`,
+            },
+            android: {
+              priority: "high",
             },
           });
         });
@@ -125,11 +127,13 @@ exports.createClaim = async (req, res) => {
             .then(async (claim) => {
               if (claim.status === "unprocessed") {
                 await admin.messaging().sendMulticast({
-                  data: { routeName: "CLAIM_DETAIL" },
                   tokens: techUser.fcm_key,
                   notification: {
                     title: "Attention!!",
                     body: `vous avez une réclamation non encore traitée issue par l'enseignant ${teacherData.fullname}`,
+                  },
+                  android: {
+                    priority: "high",
                   },
                 });
 
@@ -151,11 +155,13 @@ exports.createClaim = async (req, res) => {
             .then(async (refetchedClaim) => {
               if (refetchedClaim.status === "unprocessed") {
                 await admin.messaging().sendMulticast({
-                  data: { routeName: "CLAIM_DETAIL" },
                   tokens: techUser.fcm_key,
                   notification: {
                     title: "Attention!!",
                     body: `Vous avez une réclamation qui n'a pas encore été prise en charge depuis une semaine soumise par l'enseignant ${teacherUser.fullname}`,
+                  },
+                  android: {
+                    priority: "high",
                   },
                 });
                 const notificationData = {
@@ -169,11 +175,13 @@ exports.createClaim = async (req, res) => {
                 await Notification.create(notificationData);
               } else if (refetchedClaim.status === "in_progress") {
                 await admin.messaging().sendMulticast({
-                  data: { routeName: "CLAIM_DETAIL" },
                   tokens: techUser?.fcm_key,
                   notification: {
                     title: "Avertissement!!",
                     body: `Vous avez une demande inachevée qui a dépassé le délai fixé d'une semaine soumise par l'enseignant ${teacherUser.fullname}`,
+                  },
+                  android: {
+                    priority: "high",
                   },
                 });
                 const notificationData = {
@@ -199,11 +207,13 @@ exports.createClaim = async (req, res) => {
               refetchedDataMail?.status !== "not_resolved"
             ) {
               await admin.messaging().sendMulticast({
-                data: { routeName: "CLAIM_DETAIL" },
                 tokens: techUser.fcm_key,
                 notification: {
                   title: "Réclamation expirée !!",
                   body: `Vous avez une demande inachevée qui a dépassé le délai fixé par 4 jours soumise par l'enseignant ${teacherUser.fullname}`,
+                },
+                android: {
+                  priority: "high",
                 },
               });
               const notificationData = {
@@ -375,11 +385,13 @@ exports.updateClaim = async (req, res, next) => {
           const description = conditionalDescription();
 
           await admin.messaging().sendMulticast({
-            data: { routeName: "CLAIM_DETAIL" },
             tokens: teacher?.fcm_key,
             notification: {
               title: "M-à-j du réclamation",
               body: description,
+            },
+            android: {
+              priority: "high",
             },
           });
 
@@ -410,11 +422,13 @@ exports.updateClaim = async (req, res, next) => {
             await Notification.create(notificationData);
 
             await admin.messaging().sendMulticast({
-              data: { routeName: "CLAIM_DETAIL" },
               tokens: technicien?.fcm_key,
               notification: {
                 title: "Bravo!!",
                 body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacher?.fullname}.`,
+              },
+              android: {
+                priority: "high",
               },
             });
           } else if (
@@ -425,11 +439,13 @@ exports.updateClaim = async (req, res, next) => {
               isWorking: true,
             });
             await admin.messaging().sendMulticast({
-              data: { routeName: "CLAIM_DETAIL" },
               tokens: technicien?.fcm_key,
               notification: {
                 title: "Bravo!!",
                 body: `La réclamation que vous avez traitée est approuvée par l'enseignant ${teacher?.fullname}.`,
+              },
+              android: {
+                priority: "high",
               },
             });
             const notificationData = {
@@ -446,7 +462,6 @@ exports.updateClaim = async (req, res, next) => {
             claim?.type === "updateSoftware"
           ) {
             await admin.messaging().sendMulticast({
-              data: { routeName: "CLAIM_DETAIL" },
               tokens: technicien?.fcm_key,
               notification: {
                 title: "Bravo!!",
@@ -466,11 +481,13 @@ exports.updateClaim = async (req, res, next) => {
             claim?.isConfirmed === true
           ) {
             await admin.messaging().sendMulticast({
-              data: { routeName: "CLAIM_DETAIL" },
               tokens: technicien?.fcm_key,
               notification: {
                 title: "Bravo!!",
                 body: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant ${teacher?.fullname}.`,
+              },
+              android: {
+                priority: "high",
               },
             });
             const notificationData = {
