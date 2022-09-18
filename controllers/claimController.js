@@ -476,29 +476,26 @@ exports.updateClaim = async (req, res, next) => {
               data: claim,
             };
             await Notification.create(notificationData);
-          } else if (
-            claim?.isApproved === false &&
-            claim?.isConfirmed === true
-          ) {
-            await admin.messaging().sendMulticast({
-              tokens: technicien?.fcm_key,
-              notification: {
-                title: "Bravo!!",
-                body: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant ${teacher?.fullname}.`,
-              },
-              android: {
-                priority: "high",
-              },
-            });
-            const notificationData = {
-              title: "Bravo!!",
-              description: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant. ${teacher?.fullname}.`,
-              assignedTo: claim?.assignedTo,
-              targetScreen: "CLAIM_DETAIL",
-              data: claim,
-            };
-            await Notification.create(notificationData);
           }
+        } else if (claim?.isApproved === false && claim?.isConfirmed === true) {
+          await admin.messaging().sendMulticast({
+            tokens: technicien?.fcm_key,
+            notification: {
+              title: "Bravo!!",
+              body: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant ${teacher?.fullname}.`,
+            },
+            android: {
+              priority: "high",
+            },
+          });
+          const notificationData = {
+            title: "Bravo!!",
+            description: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant. ${teacher?.fullname}.`,
+            assignedTo: claim?.assignedTo,
+            targetScreen: "CLAIM_DETAIL",
+            data: claim,
+          };
+          await Notification.create(notificationData);
         }
         return await res.send(claim);
       } catch (error) {
