@@ -477,7 +477,7 @@ exports.updateClaim = async (req, res, next) => {
           await admin.messaging().sendMulticast({
             tokens: technicien?.fcm_key,
             notification: {
-              title: "Bravo!!",
+              title: "Information",
               body: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant ${teacher?.fullname}.`,
             },
             android: {
@@ -485,7 +485,7 @@ exports.updateClaim = async (req, res, next) => {
             },
           });
           const notificationData = {
-            title: "Bravo!!",
+            title: "Information",
             description: `La réclamation que vous avez traitée n'est pas approuvée par l'enseignant. ${teacher?.fullname}.`,
             assignedTo: claim?.assignedTo,
             targetScreen: "CLAIM_DETAIL",
